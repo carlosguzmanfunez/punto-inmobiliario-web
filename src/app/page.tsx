@@ -1,7 +1,7 @@
 import Link from "next/link";
 import HeroSearch from "@/components/HeroSearch";
 import FeaturedProperties, { RecentlyViewed } from "@/components/FeaturedProperties";
-import { CityExplorer, ProjectsBlock, PublishLead, PublishSteps, TypeExplorer } from "@/components/HomeSections";
+import { CityExplorer, ProjectsBlock, PublishLead, PublishSteps, TrustBar, TypeExplorer } from "@/components/HomeSections";
 import { guides } from "@/data/guides";
 import { whatsappLink } from "@/lib/site";
 import { BankIcon, CameraIcon, GlobeIcon, KeyIcon, ShieldIcon, VideoIcon, WhatsAppIcon } from "@/components/Icons";
@@ -30,6 +30,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <TrustBar />
 
       <section className="section container">
         <div className="section__head">

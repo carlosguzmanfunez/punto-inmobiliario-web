@@ -68,7 +68,7 @@ export const mainNav: NavItem[] = [
     ],
   },
   {
-    label: "Clientes en el extranjero",
+    label: "Extranjero",
     href: "/extranjero",
     children: [
       { label: "Compra desde Estados Unidos o España", href: "/extranjero", description: "Recorridos por videollamada y firma a distancia" },
@@ -88,7 +88,7 @@ export const mainNav: NavItem[] = [
     ],
   },
   {
-    label: "Quiénes somos",
+    label: "Nosotros",
     href: "/quienes-somos",
     children: [
       { label: "Nuestra empresa", href: "/quienes-somos" },

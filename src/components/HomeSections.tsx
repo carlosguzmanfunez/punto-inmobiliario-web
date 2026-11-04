@@ -8,7 +8,7 @@ import type { Seller } from "@/lib/backend";
 import { formatLempiras, whatsappLink } from "@/lib/site";
 import { useAuth, usePlans } from "./AuthProvider";
 import { useProperties } from "./useProperties";
-import { BuildingIcon, CheckIcon, HomeIcon, StoreIcon, WhatsAppIcon } from "./Icons";
+import { BuildingIcon, CheckIcon, GlobeIcon, HomeIcon, KeyIcon, PinIcon, ShieldIcon, StoreIcon, WhatsAppIcon } from "./Icons";
 
 const groups: { title: string; icon: React.ReactNode; types: PropertyType[] }[] = [
   { title: "Residencial", icon: <HomeIcon size={22} />, types: ["casa", "apartamento", "terreno"] },
@@ -18,6 +18,30 @@ const typeImg: Record<PropertyType, string> = {
   casa: photos.casaJardin, apartamento: photos.torre, terreno: photos.terreno,
   local: photos.local, oficina: photos.oficina, bodega: photos.bodega,
 };
+
+// Franja de confianza que flota sobre el final de la portada. Las cifras salen del inventario real.
+export function TrustBar() {
+  const { list } = useProperties();
+  const plans = usePlans();
+  const n = list?.length;
+  const cities = list ? new Set(list.map((p) => p.city)).size : undefined;
+  const items = [
+    { icon: <ShieldIcon size={22} />, value: n ?? "…", label: "propiedades verificadas" },
+    { icon: <PinIcon size={22} />, value: cities ?? "…", label: "ciudades de Honduras" },
+    { icon: <GlobeIcon size={22} />, value: "A distancia", label: "compra desde EE. UU. o España" },
+    { icon: <KeyIcon size={22} />, value: `Desde ${formatLempiras(plans.publicacion.price)}`, label: "para publicar 30 días" },
+  ];
+  return (
+    <div className="container trust-bar">
+      {items.map((i) => (
+        <div key={i.label} className="trust-bar__item">
+          <span className="trust-bar__icon">{i.icon}</span>
+          <span><strong>{i.value}</strong><small>{i.label}</small></span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function TypeExplorer() {
   const { list } = useProperties();
@@ -51,7 +75,7 @@ export function CityExplorer() {
           <Link key={c.name} href={`/propiedades?ciudad=${encodeURIComponent(c.name)}&depto=${encodeURIComponent(c.department)}`} className="city-card">
             <img src={c.image} alt="" loading="lazy" />
             <span className="city-card__shade" />
-            <span className="city-card__text"><strong>{c.name}</strong><small>{c.department} · {list ? `${n} ${n === 1 ? "propiedad" : "propiedades"}` : "…"}</small></span>
+            <span className="city-card__text"><small className="city-card__dept">{c.department}</small><strong>{c.name}</strong><span className="city-card__count">{list ? `${n} ${n === 1 ? "propiedad" : "propiedades"}` : "…"}</span></span>
           </Link>
         );
       })}
