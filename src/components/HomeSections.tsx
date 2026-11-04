@@ -1,4 +1,5 @@
 "use client";
+import { photos } from "@/data/photos";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { typeLabel, typePlural, type PropertyType } from "@/data/properties";
@@ -14,8 +15,8 @@ const groups: { title: string; icon: React.ReactNode; types: PropertyType[] }[] 
   { title: "Comercial", icon: <StoreIcon size={22} />, types: ["local", "oficina", "bodega"] },
 ];
 const typeImg: Record<PropertyType, string> = {
-  casa: "/img/casa-1.svg", apartamento: "/img/apto-1.svg", terreno: "/img/terreno-1.svg",
-  local: "/img/local-1.svg", oficina: "/img/oficina-1.svg", bodega: "/img/bodega-1.svg",
+  casa: photos.casaJardin, apartamento: photos.torre, terreno: photos.terreno,
+  local: photos.local, oficina: photos.oficina, bodega: photos.bodega,
 };
 
 export function TypeExplorer() {

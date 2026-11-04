@@ -3,20 +3,21 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "../AuthProvider";
-import { CalcIcon, CardIcon, ChartIcon, HomeIcon, InboxIcon, LogoutIcon, StoreIcon, UsersIcon } from "../Icons";
+import { CalcIcon, CardIcon, ChartIcon, HomeIcon, InboxIcon, LogoutIcon, StoreIcon, UserIcon, UsersIcon } from "../Icons";
 
-export type AdminTab = "resumen" | "propiedades" | "pagos" | "vendedores" | "consultas" | "usuarios" | "ajustes";
+export type AdminTab = "resumen" | "propiedades" | "pagos" | "vendedores" | "consultas" | "clientes" | "usuarios" | "ajustes";
 export type SellerTab = "resumen" | "propiedades" | "consultas" | "vitrina" | "planes";
 
 type Item = { tab: string; label: string; icon: React.ReactNode };
 
 const adminItems: Item[] = [
   { tab: "resumen", label: "Resumen", icon: <ChartIcon size={18} /> },
-  { tab: "propiedades", label: "Propiedades", icon: <HomeIcon size={18} /> },
+  { tab: "propiedades", label: "Inventario", icon: <HomeIcon size={18} /> },
+  { tab: "consultas", label: "Consultas", icon: <InboxIcon size={18} /> },
+  { tab: "clientes", label: "Clientes", icon: <UserIcon size={18} /> },
   { tab: "pagos", label: "Pagos", icon: <CardIcon size={18} /> },
   { tab: "vendedores", label: "Vendedores", icon: <StoreIcon size={18} /> },
-  { tab: "consultas", label: "Consultas", icon: <InboxIcon size={18} /> },
-  { tab: "usuarios", label: "Usuarios", icon: <UsersIcon size={18} /> },
+  { tab: "usuarios", label: "Registrados", icon: <UsersIcon size={18} /> },
   { tab: "ajustes", label: "Precios y ajustes", icon: <CalcIcon size={18} /> },
 ];
 

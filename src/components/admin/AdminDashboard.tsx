@@ -4,13 +4,16 @@ import { downloadCsv, today } from "@/lib/csv";
 import ReceiptButton from "../ReceiptButton";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
+import { formatPrice, isLive, listingStatusLabel, operationLabel, propertyCode, typeLabel, type Property } from "@/data/properties";
 import { roleLabel, vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Role, type Seller, type UserRow } from "@/lib/backend";
 import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
 import { formatLempiras, plural, whatsappTo, type PlanKind } from "@/lib/site";
 import { useAuth, usePlans } from "../AuthProvider";
 import { EditIcon, EyeIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import AdminShell, { type AdminTab } from "./AdminShell";
+import AdminSummary from "./AdminSummary";
+import ClientsTab, { countryOf } from "./ClientsTab";
+import { ColumnChart, type Col } from "./Charts";
 
 export default function AdminDashboard() {
   const sp = useSearchParams();
@@ -42,133 +45,17 @@ export default function AdminDashboard() {
       {error && <p className="form__error">{error}</p>}
       {!props || !inq || !users ? <p className="muted">Cargando datos…</p> : (
         <>
-          {tab === "resumen" && <Summary props={props} inq={inq} users={users} payments={payments} sellers={sellers} />}
+          {tab === "resumen" && <AdminSummary props={props} inq={inq} users={users} payments={payments} sellers={sellers} onChange={load} />}
           {tab === "propiedades" && <PropertiesTab props={props} inq={inq} sellers={sellers} onChange={load} />}
           {tab === "pagos" && <PaymentsTab payments={payments} onChange={load} />}
           {tab === "vendedores" && <SellersTab sellers={sellers} props={props} />}
           {tab === "consultas" && <InquiriesTab inq={inq} onChange={load} />}
+          {tab === "clientes" && <ClientsTab inq={inq} users={users} />}
           {tab === "usuarios" && <UsersTab users={users} meId={profile?.id ?? ""} onChange={load} />}
           {tab === "ajustes" && <SettingsTab />}
         </>
       )}
     </AdminShell>
-  );
-}
-
-function Stat({ label, value, hint, href }: { label: string; value: string | number; hint?: string; href?: string }) {
-  const body = <><span className="stat__label">{label}</span><span className="stat__value">{value}</span>{hint && <span className="stat__hint">{hint}</span>}</>;
-  return href ? <Link href={href} className="stat">{body}</Link> : <div className="stat">{body}</div>;
-}
-
-function Summary({ props, inq, users, payments, sellers }: { props: Property[]; inq: Inquiry[]; users: UserRow[]; payments: Payment[]; sellers: Seller[] }) {
-  const plans = usePlans();
-  const published = props.filter((p) => isLive(p));
-  const month = new Date(Date.now() - 30 * 864e5); // ingresos de los últimos 30 días
-  const income = payments.filter((x) => x.status === "pagado" && x.confirmedAt && new Date(x.confirmedAt) >= month).reduce((s, x) => s + x.amount, 0);
-  const toConfirm = payments.filter((x) => x.status === "pendiente").length;
-  const views = props.reduce((s, p) => s + (p.views ?? 0), 0);
-  const nuevas = inq.filter((i) => i.status === "nueva").length;
-  const since = Date.now() - 30 * 864e5;
-  const newUsers = users.filter((u) => new Date(u.createdAt).getTime() > since).length;
-
-  // Consultas por día en las últimas 2 semanas.
-  const days = useMemo(() => Array.from({ length: 14 }, (_, k) => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (13 - k));
-    const next = d.getTime() + 864e5;
-    return { d, n: inq.filter((i) => { const t = new Date(i.createdAt).getTime(); return t >= d.getTime() && t < next; }).length };
-  }), [inq]);
-  const maxDay = Math.max(1, ...days.map((x) => x.n));
-
-  // Renovaciones: publicaciones y vitrinas que vencen en los próximos 7 días.
-  const soon = Date.now() + 7 * 864e5;
-  const expiring = [
-    ...props.filter((p) => p.ownerId && isLive(p) && p.paidUntil && new Date(p.paidUntil).getTime() < soon)
-      .map((p) => ({ id: p.id, what: p.title, until: p.paidUntil!, seller: sellers.find((x) => x.id === p.ownerId) })),
-    ...sellers.filter((x) => vitrinaActive(x) && new Date(x.vitrinaUntil!).getTime() < soon).map((x) => ({ id: "v" + x.id, what: "Vitrina", until: x.vitrinaUntil!, seller: x })),
-  ].sort((a, b) => a.until.localeCompare(b.until));
-  const byPlan = (Object.keys(plans) as PlanKind[]).map((k) => ({ k, n: payments.filter((x) => x.kind === k && x.status === "pagado" && x.confirmedAt && new Date(x.confirmedAt) >= month).reduce((s2, x) => s2 + x.amount, 0) }));
-  const maxPlan = Math.max(1, ...byPlan.map((x) => x.n));
-
-  const top = [...published].sort((a, b) => (b.views ?? 0) - (a.views ?? 0)).slice(0, 5);
-  const maxViews = Math.max(1, ...top.map((p) => p.views ?? 0));
-  const byCity = Object.entries(published.reduce<Record<string, number>>((m, p) => ({ ...m, [p.city]: (m[p.city] ?? 0) + 1 }), {})).sort((a, b) => b[1] - a[1]);
-
-  return (
-    <>
-      <div className="admin__title"><h1 className="h2">Resumen</h1><Link className="btn btn--primary" href="/admin/propiedad"><PlusIcon size={18} /> Nueva propiedad</Link></div>
-      <div className="stats">
-        <Stat label="Propiedades publicadas" value={published.length} hint={`${props.length - published.length} ocultas`} href="/admin?tab=propiedades" />
-        <Stat label="Consultas nuevas" value={nuevas} hint={`${inq.length} en total`} href="/admin?tab=consultas" />
-        <Stat label="Visitas a propiedades" value={views.toLocaleString("es-HN")} hint="desde que se publicaron" />
-        <Stat label="Usuarios registrados" value={users.length} hint={`${newUsers} en los últimos 30 días`} href="/admin?tab=usuarios" />
-        <Stat label="Ingresos (30 días)" value={formatLempiras(income)} hint={`${toConfirm} pagos por confirmar`} href="/admin?tab=pagos" />
-      </div>
-      <div className="panels">
-        <div className="panel">
-          <h2 className="h3">Consultas de los últimos 14 días</h2>
-          <div className="bars" role="img" aria-label="Consultas por día">
-            {days.map(({ d, n }) => (
-              <div key={d.toISOString()} className="bars__col" title={`${formatDate(d.toISOString())}: ${n}`}>
-                <span className="bars__n">{n || ""}</span>
-                <span className="bars__bar" style={{ height: `${(n / maxDay) * 100}%` }} />
-                <span className="bars__d">{d.getDate()}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="panel">
-          <h2 className="h3">Más vistas</h2>
-          <ul className="hbars">
-            {top.map((p) => (
-              <li key={p.id}>
-                <Link href={`/propiedades/${p.slug}`} className="hbars__label">{p.title}</Link>
-                <span className="hbars__track"><span style={{ width: `${((p.views ?? 0) / maxViews) * 100}%` }} /></span>
-                <span className="hbars__n">{p.views ?? 0}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="panel">
-          <h2 className="h3">Publicadas por ciudad</h2>
-          <ul className="hbars">
-            {byCity.map(([c, n]) => (
-              <li key={c}><span className="hbars__label">{c}</span><span className="hbars__track"><span style={{ width: `${(n / published.length) * 100}%` }} /></span><span className="hbars__n">{n}</span></li>
-            ))}
-          </ul>
-        </div>
-        <div className="panel">
-          <h2 className="h3">Por renovar esta semana</h2>
-          {expiring.length === 0 ? <p className="muted small">Ningún plan vence en los próximos 7 días.</p> : (
-            <ul className="mini-list">
-              {expiring.map((e) => (
-                <li key={e.id} className="renew">
-                  <div><strong>{e.seller?.name ?? "Vendedor"}</strong><br /><span className="muted small">{e.what} · vence en {daysLeft(e.until)} {daysLeft(e.until) === 1 ? "día" : "días"}</span></div>
-                  {e.seller?.whatsapp && <a className="btn btn--wa btn--sm" target="_blank" rel="noopener noreferrer" href={whatsappTo(e.seller.whatsapp, `Hola ${e.seller.name}, le escribe Punto Inmobiliario Hn. Su plan de "${e.what}" vence en ${daysLeft(e.until)} ${daysLeft(e.until) === 1 ? "día" : "días"}. ¿Desea renovarlo para seguir visible?`)}><WhatsAppIcon size={14} /> Avisar</a>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div className="panel">
-          <h2 className="h3">Ingresos por plan (30 días)</h2>
-          <ul className="hbars">
-            {byPlan.map(({ k, n }) => (
-              <li key={k}><span className="hbars__label">{{ publicacion: "Publicación", destacada: "Destacada", vitrina: "Vitrina" }[k]}</span><span className="hbars__track"><span style={{ width: `${(n / maxPlan) * 100}%` }} /></span><span className="hbars__n hbars__n--wide">{formatLempiras(n)}</span></li>
-            ))}
-          </ul>
-          <Link href="/admin?tab=ajustes" className="link-arrow small">Cambiar precios →</Link>
-        </div>
-        <div className="panel">
-          <h2 className="h3">Últimas consultas</h2>
-          <ul className="mini-list">
-            {inq.slice(0, 4).map((i) => (
-              <li key={i.id}><strong>{i.name}</strong> <span className={`status status--${i.status}`}>{statusLabel[i.status]}</span><br /><span className="muted small">{i.propertyTitle ?? "Consulta general"} · {formatDate(i.createdAt)}</span></li>
-            ))}
-          </ul>
-          <Link href="/admin?tab=consultas" className="link-arrow small">Ver todas →</Link>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -185,19 +72,44 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
     ["oculta", "Ocultas o borrador", (p) => !isLive(p) && p.status !== "pendiente" && !(p.ownerId && p.status === "publicada")],
     ["destacada", "Destacadas", (p) => !!p.featured],
   ];
+  const [type, setType] = useState("");
+  const [op, setOp] = useState("");
+  const [city, setCity] = useState("");
   const match = groups.find((g) => g[0] === st)![2];
-  const shown = props.filter((p) => match(p) && `${p.title} ${p.city} ${p.neighborhood}`.toLowerCase().includes(q.toLowerCase()));
+  const shown = props.filter((p) => match(p) && (!type || p.type === type) && (!op || p.operation === op) && (!city || p.city === city)
+    && `${p.title} ${p.city} ${p.neighborhood} ${propertyCode(p)}`.toLowerCase().includes(q.toLowerCase()));
+  const live = props.filter((p) => isLive(p));
+  const toL = (p: Property) => (p.currency === "USD" ? p.price * 26.3 : p.price);
+  const sale = live.filter((p) => p.operation === "venta");
+  const rent = live.filter((p) => p.operation === "alquiler");
+  const avg = (l: Property[]) => (l.length ? l.reduce((s2, p) => s2 + toL(p), 0) / l.length : 0);
+  const short = (n: number) => n >= 1e6 ? `L ${(n / 1e6).toFixed(1)} M` : `L ${Math.round(n).toLocaleString("en-US")}`;
+  const cities = Array.from(new Set(props.map((p) => p.city))).sort();
+  const views = live.reduce((s2, p) => s2 + (p.views ?? 0), 0);
 
   return (
     <>
       <div className="admin__title">
-        <h1 className="h2">Propiedades <span className="muted">({props.length})</span></h1>
-        <Link className="btn btn--primary" href="/admin/propiedad"><PlusIcon size={18} /> Nueva propiedad</Link>
+        <h1 className="h2">Inventario <span className="muted">({props.length})</span></h1>
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`inventario-${today()}.csv`, ["Código", "Título", "Tipo", "Operación", "Ciudad", "Colonia", "Precio", "Moneda", "Habitaciones", "Baños", "m²", "Estado", "Publica", "Visitas", "Consultas"], shown.map((p) => [propertyCode(p), p.title, typeLabel[p.type], operationLabel[p.operation], p.city, p.neighborhood, p.price, p.currency, p.bedrooms, p.bathrooms, p.areaM2, isLive(p) ? "Publicada" : listingStatusLabel[p.status ?? "borrador"], p.ownerId ? sellers.find((x) => x.id === p.ownerId)?.name ?? "Vendedor" : "Punto Inmobiliario", p.views ?? 0, inq.filter((i) => i.propertyId === p.id).length]))}>Descargar Excel</button>
+        <Link className="btn btn--primary btn--sm" href="/admin/propiedad"><PlusIcon size={16} /> Nueva propiedad</Link>
+      </div>
+      <div className="kpis kpis--4">
+        <div className="kpi"><span className="kpi__label">Activas</span><span className="kpi__value">{live.length}</span><span className="kpi__foot muted small">{sale.length} en venta · {rent.length} en alquiler</span></div>
+        <div className="kpi"><span className="kpi__label">Valor en venta</span><span className="kpi__value">{short(sale.reduce((s2, p) => s2 + toL(p), 0))}</span><span className="kpi__foot muted small">precio promedio {short(avg(sale))}</span></div>
+        <div className="kpi"><span className="kpi__label">Alquiler promedio</span><span className="kpi__value">{short(avg(rent))}</span><span className="kpi__foot muted small">al mes</span></div>
+        <div className="kpi"><span className="kpi__label">Visitas</span><span className="kpi__value">{views.toLocaleString("es-HN")}</span><span className="kpi__foot muted small">{live.length ? Math.round(views / live.length) : 0} por propiedad</span></div>
       </div>
       <div className="seg">
         {groups.map(([k, label, f]) => <button key={k} className={st === k ? "is-active" : ""} onClick={() => setSt(k)}>{label} <span className="count">{props.filter(f).length}</span></button>)}
       </div>
-      <input className="admin__search" type="search" placeholder="Buscar por título, ciudad o colonia" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="toolbar">
+        <input className="admin__search" type="search" placeholder="Buscar por título, colonia o código PI-" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select className="kind-select" value={type} onChange={(e) => setType(e.target.value)} aria-label="Tipo"><option value="">Todos los tipos</option>{Object.entries(typeLabel).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
+        <select className="kind-select" value={op} onChange={(e) => setOp(e.target.value)} aria-label="Operación"><option value="">Venta y alquiler</option><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+        <select className="kind-select" value={city} onChange={(e) => setCity(e.target.value)} aria-label="Ciudad"><option value="">Todas las ciudades</option>{cities.map((c) => <option key={c}>{c}</option>)}</select>
+        <span className="muted small">{plural(shown.length, "resultado", "resultados")}</span>
+      </div>
       <div className="table-wrap">
         <table className="table">
           <thead><tr><th>Propiedad</th><th>Publica</th><th>Precio</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th aria-label="Acciones" /></tr></thead>
@@ -207,7 +119,7 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
                 <td>
                   <div className="t-prop">
                     <img src={p.images[0] ?? "/img/casa-1.svg"} alt="" />
-                    <div><Link href={`/admin/propiedad?id=${p.id}`} className="t-prop__title">{p.title}</Link><span className="muted small">{typeLabel[p.type]} · {p.neighborhood}, {p.city}</span></div>
+                    <div><Link href={`/admin/propiedad?id=${p.id}`} className="t-prop__title">{p.title}</Link><span className="muted small">{propertyCode(p)} · {typeLabel[p.type]} · {p.neighborhood}, {p.city}</span></div>
                   </div>
                 </td>
                 <td className="small">{p.ownerId ? sellers.find((x) => x.id === p.ownerId)?.name ?? "Vendedor" : "Punto Inmobiliario"}<br /><span className="muted">{operationLabel[p.operation]}</span></td>
@@ -312,21 +224,54 @@ function InquiriesTab({ inq, onChange }: { inq: Inquiry[]; onChange: () => void 
 function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; onChange: () => void }) {
   const { backend } = useAuth();
   const [err, setErr] = useState("");
+  const [role, setRole] = useState<Role | "">("");
+  const [q, setQ] = useState("");
+  const DAY = 864e5;
+  const shown = users.filter((u) => (!role || u.role === role) && `${u.fullName} ${u.email} ${u.phone}`.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const newMonth = users.filter((u) => Date.now() - new Date(u.createdAt).getTime() < 30 * DAY).length;
+  const active = users.filter((u) => u.favorites + u.inquiries + u.properties > 0).length;
+  // Registros por semana en las últimas 12 semanas.
+  const weeks: Col[] = Array.from({ length: 12 }, (_, k) => {
+    const b = Date.now() - (11 - k) * 7 * DAY, a = b - 7 * DAY;
+    const d = new Date(b);
+    return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: users.filter((u) => { const t = new Date(u.createdAt).getTime(); return t >= a && t < b; }).length, tip: `Semana al ${formatDate(d.toISOString())}` };
+  });
   return (
     <>
-      <div className="admin__title"><h1 className="h2">Usuarios <span className="muted">({users.length})</span></h1>
-        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`usuarios-${today()}.csv`, ["Nombre", "Correo", "Teléfono", "Rol", "Registro", "Favoritos", "Consultas", "Publicaciones"], users.map((u) => [u.fullName, u.email, u.phone, roleLabel[u.role], u.createdAt.slice(0, 10), u.favorites, u.inquiries, u.properties]))}>Descargar Excel</button>
+      <div className="admin__title"><h1 className="h2">Registrados <span className="muted">({users.length})</span></h1>
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`registrados-${today()}.csv`, ["Nombre", "Correo", "Teléfono", "País", "Rol", "Registro", "Favoritos", "Consultas", "Publicaciones"], shown.map((u) => [u.fullName, u.email, u.phone, countryOf(u.phone), roleLabel[u.role], u.createdAt.slice(0, 10), u.favorites, u.inquiries, u.properties]))}>Descargar Excel</button>
+      </div>
+      <div className="dash-grid dash-grid--users">
+        <div className="kpis kpis--2">
+          <div className="kpi"><span className="kpi__label">Cuentas</span><span className="kpi__value">{users.length}</span><span className="kpi__foot muted small">{plural(newMonth, "nueva", "nuevas")} en 30 días</span></div>
+          <div className="kpi"><span className="kpi__label">Activas</span><span className="kpi__value">{users.length ? Math.round((active / users.length) * 100) : 0}%</span><span className="kpi__foot muted small">guardaron, consultaron o publicaron</span></div>
+          <div className="kpi"><span className="kpi__label">Compradores</span><span className="kpi__value">{users.filter((u) => u.role === "user").length}</span></div>
+          <div className="kpi"><span className="kpi__label">Vendedores</span><span className="kpi__value">{users.filter((u) => u.role === "seller").length}</span></div>
+        </div>
+        <section className="panel dash-span-2">
+          <div className="panel__head"><h2 className="h3">Registros por semana</h2><span className="muted small">últimas 12 semanas</span></div>
+          <ColumnChart data={weeks} label="Registros por semana" height={170} />
+        </section>
       </div>
       {err && <p className="form__error">{err}</p>}
+      <div className="toolbar">
+        <div className="seg">
+          {([["", "Todos"], ["user", "Compradores"], ["seller", "Vendedores"], ["admin", "Administradores"]] as const).map(([k, l]) => (
+            <button key={k} className={role === k ? "is-active" : ""} onClick={() => setRole(k)}>{l} <span className="count">{k ? users.filter((u) => u.role === k).length : users.length}</span></button>
+          ))}
+        </div>
+        <input className="admin__search" type="search" placeholder="Buscar por nombre, correo o teléfono" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Nombre</th><th>Contacto</th><th>Registro</th><th className="num">Favoritos</th><th className="num">Consultas</th><th className="num">Publicaciones</th><th>Rol</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>País</th><th>Registro</th><th className="num">Favoritos</th><th className="num">Consultas</th><th className="num">Publicaciones</th><th>Rol</th></tr></thead>
           <tbody>
-            {users.map((u) => (
+            {shown.map((u) => (
               <tr key={u.id}>
-                <td><strong>{u.fullName || "Sin nombre"}</strong>{u.id === meId && <span className="muted small"> (tú)</span>}</td>
-                <td><span className="small">{u.email}</span><br /><span className="muted small">{u.phone}</span></td>
-                <td className="nowrap">{formatDate(u.createdAt)}</td>
+                <td><div className="t-person"><span className="avatar">{(u.fullName || u.email).slice(0, 1).toUpperCase()}</span><div><strong>{u.fullName || "Sin nombre"}</strong>{u.id === meId && <span className="muted small"> (tú)</span>}<br /><span className="muted small">{u.email}</span><br /><span className="muted small nowrap">{u.phone}</span></div></div></td>
+                <td className="small">{countryOf(u.phone) !== "Honduras" ? <span className="tag-abroad">{countryOf(u.phone)}</span> : "Honduras"}</td>
+                <td className="nowrap small">{formatDate(u.createdAt)}</td>
                 <td className="num">{u.favorites}</td>
                 <td className="num">{u.inquiries}</td>
                 <td className="num">{u.properties}</td>

@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { CompareBar } from "@/components/Compare";
+import ImageFallback from "@/components/ImageFallback";
 import { site } from "@/lib/site";
 import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Footer />
           <CompareBar />
           <WhatsAppButton />
+          <ImageFallback />
         </AuthProvider>
       </body>
     </html>

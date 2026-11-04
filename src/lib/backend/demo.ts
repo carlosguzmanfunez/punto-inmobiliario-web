@@ -1,5 +1,6 @@
 import { isLive, properties as seedProperties, slugify, type ListingStatus, type Property } from "@/data/properties";
 import { defaultSettings, plans, plansWith } from "@/lib/site";
+import { photos } from "@/data/photos";
 import { vitrinaActive, type Backend, type Inquiry, type Payment, type Profile, type SavedSearch, type Seller, type Settings } from "./types";
 
 // Modo demo: todo se guarda en localStorage del navegador. Sirve para probar el sitio
@@ -13,7 +14,7 @@ type DB = {
   settings?: Settings;
 };
 
-const KEY = "pihn-demo-v4";
+const KEY = "pihn-demo-v5";
 export const DEMO_ADMIN = { email: "admin@demo.hn", password: "admin123" };
 export const DEMO_SELLER = { email: "ventas@morazan.hn", password: "vende123" };
 export const DEMO_BUYER = { email: "maria@ejemplo.com", password: "maria123" };
@@ -41,31 +42,41 @@ function seed(): DB {
     const x = p.find((y) => y.slug === slug)!;
     x.ownerId = seller.id; x.status = "publicada"; x.paidUntil = plusDays(null, days);
   }
+  // Propiedades de los otros vendedores de ejemplo.
+  for (const [slug, owner, days] of [["casa-colonia-el-toronjal-la-ceiba", "u-caribe", 23], ["apartamento-frente-al-mar-west-end", "u-caribe", 3], ["oficina-corporativa-lomas-del-mayab", "u-lempira", 27], ["bodega-industrial-choloma", "u-lempira", 11], ["casa-familiar-siguatepeque", "u-karla", 6]] as const) {
+    const x = p.find((y) => y.slug === slug)!;
+    x.ownerId = owner; x.status = "publicada"; x.paidUntil = plusDays(null, days);
+  }
   const draft: Property = {
     id: "torre-alameda-pendiente", slug: "torre-alameda-apartamentos-preventa", title: "Torre Alameda: apartamentos en preventa",
     operation: "venta", type: "apartamento", price: 3200000, currency: "HNL", city: "San Pedro Sula", neighborhood: "Colonia Alameda",
-    bedrooms: 2, bathrooms: 2, areaM2: 98, parking: 1, images: ["/img/apto-1.svg", "/img/apto-2.svg"],
+    bedrooms: 2, bathrooms: 2, areaM2: 98, parking: 1, images: [photos.edificios, photos.salaLuminosa],
     features: ["Preventa", "Prima en cuotas", "Piscina", "Gimnasio", "Entrega 2027"],
     description: "Proyecto de 48 apartamentos en la Colonia Alameda. Reserva con L 20,000 y paga la prima en cuotas durante la construcción.",
     isNew: true, featured: false, published: false, views: 0, createdAt: now(), ownerId: seller.id, status: "pendiente", paidUntil: null,
   };
   p.push(draft);
+
+  // Historia de ejemplo de 90 días para que el panel muestre métricas realistas.
+  const h = history(p, [seller, ...extraSellerUsers], maria);
   return {
-    users: [admin, maria, seller],
-    sellers: [morazan],
+    users: [admin, maria, seller, ...extraSellerUsers, ...h.buyers],
+    sellers: [morazan, ...extraSellers],
     properties: p,
     payments: [
       { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: draft.id, amount: plans.publicacion.price, reference: "Transferencia BAC #448812", status: "pendiente", createdAt: now(), confirmedAt: null, receipt: sampleReceipt(plans.publicacion.price) },
       { id: uid(), sellerId: seller.id, kind: "vitrina", propertyId: null, amount: plans.vitrina.price, reference: "Depósito Atlántida", status: "pagado", createdAt: new Date(Date.now() - 9 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 9 * DAY).toISOString() },
       { id: uid(), sellerId: seller.id, kind: "destacada", propertyId: "apartamento-torre-sps", amount: plans.destacada.price, reference: "Transferencia BAC #440219", status: "pagado", createdAt: new Date(Date.now() - 12 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 12 * DAY).toISOString() },
       { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: "terreno-carretera-santa-lucia", amount: plans.publicacion.price, reference: "Depósito Ficohsa", status: "pagado", createdAt: new Date(Date.now() - 25 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 25 * DAY).toISOString() },
+      ...h.payments,
     ],
-    favorites: [{ userId: maria.id, propertyId: p[5].id }, { userId: maria.id, propertyId: p[0].id }],
+    favorites: [{ userId: maria.id, propertyId: p[5].id }, { userId: maria.id, propertyId: p[0].id }, ...h.favorites],
     inquiries: [
-      { id: uid(), propertyId: p[5].id, userId: maria.id, name: maria.fullName, email: maria.email, phone: maria.phone, message: "Vivo en Miami, ¿pueden hacerme un recorrido por videollamada este sábado?", status: "nueva", createdAt: "2026-11-02T18:10:00.000Z" },
-      { id: uid(), propertyId: p[1].id, userId: null, name: "Jorge Martínez", email: "jorge.m@ejemplo.com", phone: "+504 9988-7766", message: "¿El alquiler incluye mantenimiento? Me interesa por 12 meses.", status: "en_proceso", createdAt: "2026-11-01T14:22:00.000Z" },
-      { id: uid(), propertyId: p[2].id, userId: null, name: "Ana Reyes", email: "ana.reyes@ejemplo.com", phone: "+504 3311-2244", message: "¿Aceptan financiamiento con BAC? Quisiera visitarla.", status: "cerrada", createdAt: "2026-10-28T09:45:00.000Z" },
-      { id: uid(), propertyId: p[4].id, userId: null, name: "Luis Paredes", email: "luis.p@ejemplo.com", phone: "+504 9512-3344", message: "¿El apartamento tiene vista al Merendón desde la sala? Me interesa para inversión.", status: "nueva", createdAt: "2026-11-03T11:05:00.000Z" },
+      { id: uid(), propertyId: p[5].id, userId: maria.id, name: maria.fullName, email: maria.email, phone: maria.phone, message: "Vivo en Miami, ¿pueden hacerme un recorrido por videollamada este sábado?", status: "nueva", createdAt: new Date(Date.now() - 1.2 * DAY).toISOString() },
+      { id: uid(), propertyId: p[1].id, userId: null, name: "Jorge Martínez", email: "jorge.m@ejemplo.com", phone: "+504 9988-7766", message: "¿El alquiler incluye mantenimiento? Me interesa por 12 meses.", status: "en_proceso", createdAt: new Date(Date.now() - 2.4 * DAY).toISOString() },
+      { id: uid(), propertyId: p[2].id, userId: null, name: "Ana Reyes", email: "ana.reyes@ejemplo.com", phone: "+504 3311-2244", message: "¿Aceptan financiamiento con BAC? Quisiera visitarla.", status: "cerrada", createdAt: new Date(Date.now() - 6.6 * DAY).toISOString() },
+      { id: uid(), propertyId: p[4].id, userId: null, name: "Luis Paredes", email: "luis.p@ejemplo.com", phone: "+504 9512-3344", message: "¿El apartamento tiene vista al Merendón desde la sala? Me interesa para inversión.", status: "nueva", createdAt: new Date(Date.now() - 0.4 * DAY).toISOString() },
+      ...h.inquiries,
     ],
     settings: { ...defaultSettings, bankInfo: "BAC Credomatic · Cuenta de ahorro en lempiras 7300-0000-00 · A nombre de Punto Inmobiliario Hn (datos de prueba)" },
     searches: [
@@ -73,6 +84,78 @@ function seed(): DB {
     ],
     session: null,
   };
+}
+
+// ---------- Datos de ejemplo para el panel (nombres y contactos ficticios) ----------
+const extraSellerUsers: DemoUser[] = [
+  { id: "u-caribe", email: "info@caribeinmuebles.hn", password: "demo1234", fullName: "Gabriela Ramos", phone: "+504 9455-1020", role: "seller", createdAt: new Date(Date.now() - 64 * DAY).toISOString() },
+  { id: "u-lempira", email: "ventas@lempirabienes.hn", password: "demo1234", fullName: "Óscar Zelaya", phone: "+504 9733-8812", role: "seller", createdAt: new Date(Date.now() - 41 * DAY).toISOString() },
+  { id: "u-karla", email: "karla.mejia@ejemplo.com", password: "demo1234", fullName: "Karla Mejía", phone: "+504 3190-4471", role: "seller", createdAt: new Date(Date.now() - 17 * DAY).toISOString() },
+];
+const extraSellers: Seller[] = [
+  { id: "u-caribe", slug: "caribe-inmuebles", name: "Caribe Inmuebles", city: "La Ceiba", whatsapp: "+504 9455-1020", logo: "", bio: "Casas y apartamentos en La Ceiba, Roatán y Utila. Especialistas en compradores que viven fuera de Honduras.", vitrinaUntil: new Date(Date.now() + 4 * DAY).toISOString(), createdAt: extraSellerUsers[0].createdAt },
+  { id: "u-lempira", slug: "lempira-bienes-raices", name: "Lempira Bienes Raíces", city: "Tegucigalpa", whatsapp: "+504 9733-8812", logo: "", bio: "Oficinas, locales y bodegas para empresas en Tegucigalpa y el valle de Sula.", vitrinaUntil: null, createdAt: extraSellerUsers[1].createdAt },
+  { id: "u-karla", slug: "karla-mejia", name: "Karla Mejía, agente", city: "Siguatepeque", whatsapp: "+504 3190-4471", logo: "", bio: "Agente independiente en la zona central: Siguatepeque, Comayagua y La Esperanza.", vitrinaUntil: null, createdAt: extraSellerUsers[2].createdAt },
+];
+
+// Generador con semilla fija: siempre produce la misma historia.
+function rng(seed = 7) { let x = seed; return () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648; }; }
+
+function history(p: Property[], sellerUsers: DemoUser[], maria: DemoUser) {
+  const r = rng(11);
+  const pick = <T,>(a: readonly T[]) => a[Math.floor(r() * a.length)];
+  const ago = (d: number) => new Date(Date.now() - d * DAY - Math.floor(r() * 10) * 3600e3).toISOString();
+  const first = ["Carlos", "José", "Luis", "Ana", "María", "Sofía", "Daniel", "Andrea", "Fernando", "Gabriela", "Mario", "Lucía", "Héctor", "Paola", "Roberto", "Valeria", "Javier", "Diana", "Kevin", "Alejandra", "Marvin", "Claudia", "Wilmer", "Fátima"];
+  const last = ["Hernández", "López", "Martínez", "Rodríguez", "García", "Flores", "Cruz", "Reyes", "Mejía", "Castro", "Ordóñez", "Pineda", "Zúniga", "Banegas", "Aguilar", "Rivera"];
+  const abroad = ["+1 305", "+1 713", "+1 718", "+34 6", "+1 404", "+1 214"];
+  const phone = () => r() < 0.32 ? `${pick(abroad)} ${100 + Math.floor(r() * 900)} ${1000 + Math.floor(r() * 9000)}` : `+504 ${pick(["9", "8", "3"])}${100 + Math.floor(r() * 900)}-${1000 + Math.floor(r() * 9000)}`;
+  const buyers: DemoUser[] = [];
+  for (let k = 0; k < 34; k++) {
+    const fn = pick(first), ln = pick(last);
+    // Más registros en las últimas semanas: el sitio va creciendo.
+    const d = Math.floor(Math.pow(r(), 1.6) * 88) + 1;
+    buyers.push({ id: `u-b${k}`, email: `${fn}.${ln}${k}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + "@ejemplo.com", password: "demo1234", fullName: `${fn} ${ln}`, phone: phone(), role: "user", createdAt: ago(d) });
+  }
+  const live = p.filter((x) => x.published !== false);
+  const msgs = [
+    "¿Sigue disponible? Me gustaría agendar una visita.",
+    "¿Cuál es el precio final? ¿Aceptan negociación?",
+    "Vivo fuera de Honduras, ¿pueden hacer el recorrido por videollamada?",
+    "¿Aceptan financiamiento bancario o con cooperativa?",
+    "¿Tiene escritura pública y está libre de gravámenes?",
+    "Me interesa para inversión, ¿cuánto se renta en la zona?",
+    "¿Incluye mantenimiento y seguridad? ¿Cuál es la cuota?",
+    "Visita presencial el sábado por la mañana, ¿es posible?",
+  ];
+  const inquiries: Inquiry[] = [];
+  for (let k = 0; k < 58; k++) {
+    const d = Math.pow(r(), 1.3) * 89 + 0.5;
+    const prop = r() < 0.88 ? live[Math.floor(Math.pow(r(), 1.4) * live.length)] : null;
+    const reg = r() < 0.45 ? pick(buyers) : null;
+    const fn = pick(first), ln = pick(last);
+    const name = reg?.fullName ?? `${fn} ${ln}`;
+    const status: Inquiry["status"] = d < 4 ? (r() < 0.7 ? "nueva" : "en_proceso") : d < 20 ? pick(["en_proceso", "en_proceso", "cerrada", "nueva"] as const) : "cerrada";
+    inquiries.push({
+      id: uid(), propertyId: prop?.id ?? null, userId: reg?.id ?? null, name,
+      email: reg?.email ?? `${fn}.${ln}.${k}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + "@ejemplo.com",
+      phone: reg?.phone ?? phone(), message: prop ? pick(msgs) : "Busco casa de 3 habitaciones en Tegucigalpa, presupuesto de L 3 millones.",
+      status, createdAt: ago(d),
+    });
+  }
+  // Pagos confirmados de los vendedores en los últimos 90 días.
+  const payments: Payment[] = [];
+  const kinds = ["publicacion", "publicacion", "publicacion", "destacada", "destacada", "vitrina"] as const;
+  for (let k = 0; k < 26; k++) {
+    const d = Math.pow(r(), 1.2) * 88 + 1;
+    const kind = pick(kinds);
+    const su = pick(sellerUsers);
+    const owned = p.filter((x) => x.ownerId === su.id);
+    const at = ago(d);
+    payments.push({ id: uid(), sellerId: su.id, kind, propertyId: kind === "vitrina" ? null : owned[0]?.id ?? null, amount: plans[kind].price, reference: `${pick(["Transferencia BAC", "Depósito Ficohsa", "Transferencia Atlántida", "Depósito Banpaís"])} #${100000 + Math.floor(r() * 899999)}`, status: r() < 0.93 ? "pagado" : "rechazado", createdAt: at, confirmedAt: at });
+  }
+  const favorites = buyers.slice(0, 20).flatMap((b, k) => [{ userId: b.id, propertyId: live[(k * 3) % live.length].id }, ...(k % 2 ? [{ userId: b.id, propertyId: live[(k * 7 + 2) % live.length].id }] : [])]);
+  void maria;
+  return { buyers, inquiries, payments, favorites };
 }
 
 function load(): DB {

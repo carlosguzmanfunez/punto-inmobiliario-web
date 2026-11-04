@@ -1,3 +1,4 @@
+import { photos } from "./photos";
 // Guías y consejos (blog). Contenido general de orientación; no sustituye asesoría legal.
 export type Guide = { slug: string; title: string; summary: string; category: string; minutes: number; image: string; body: { h?: string; p?: string; list?: string[] }[] };
 
@@ -6,7 +7,7 @@ export const guides: Guide[] = [
     slug: "comprar-casa-en-honduras-desde-el-extranjero",
     title: "Cómo comprar casa en Honduras si vives en el extranjero",
     summary: "Los pasos para comprar con seguridad desde Estados Unidos, España o cualquier país, sin tener que viajar varias veces.",
-    category: "Extranjero", minutes: 6, image: "/img/casa-2.svg",
+    category: "Extranjero", minutes: 6, image: photos.salaLuminosa,
     body: [
       { p: "Cada año miles de hondureños que viven fuera compran su casa o terreno en Honduras. Se puede hacer de forma segura si sigues un orden y trabajas con personas que verifiquen todo por ti." },
       { h: "1. Define presupuesto y forma de pago", p: "Decide si pagarás de contado, con un préstamo de un banco hondureño o con un plan directo del desarrollador. Muchos bancos atienden a hondureños en el exterior con constancia de ingresos del país donde viven." },
@@ -20,7 +21,7 @@ export const guides: Guide[] = [
     slug: "documentos-para-vender-una-propiedad",
     title: "Documentos que necesitas para vender tu propiedad",
     summary: "Tener todo en orden acelera la venta y genera confianza en el comprador. Esta es la lista básica.",
-    category: "Vender", minutes: 4, image: "/img/casa-4.svg",
+    category: "Vender", minutes: 4, image: photos.casaFamiliar,
     body: [
       { p: "Antes de publicar, reúne los documentos. Un comprador serio y su banco los van a pedir, y tenerlos listos evita que la venta se caiga." },
       { h: "Lista básica", list: ["Escritura pública o título de propiedad", "Constancia de inscripción en el Instituto de la Propiedad", "Solvencia de bienes inmuebles de la municipalidad", "Tarjeta de identidad del propietario (o de todos, si son varios)", "Plano o croquis con medidas del terreno", "Recibos recientes de agua y energía"] },
@@ -32,7 +33,7 @@ export const guides: Guide[] = [
     slug: "cuanto-necesito-para-la-prima",
     title: "¿Cuánto necesito para la prima de una casa?",
     summary: "Qué porcentaje piden los bancos, qué gastos adicionales debes considerar y cómo calcular tu cuota.",
-    category: "Financiamiento", minutes: 5, image: "/img/casa-3.svg",
+    category: "Financiamiento", minutes: 5, image: photos.casaJardin,
     body: [
       { p: "La prima es el pago inicial que haces con tu dinero. El resto lo financia el banco o la cooperativa." },
       { h: "Porcentajes comunes", list: ["Vivienda nueva en proyecto: desde 5 % a 10 %", "Vivienda usada: normalmente 10 % a 20 %", "Terrenos y locales: suele pedirse 20 % a 30 %"] },
@@ -44,7 +45,7 @@ export const guides: Guide[] = [
     slug: "zonas-para-vivir-en-tegucigalpa",
     title: "Zonas para vivir en Tegucigalpa: guía rápida",
     summary: "Un recorrido por las colonias más buscadas de la capital según presupuesto, seguridad y estilo de vida.",
-    category: "Zonas", minutes: 5, image: "/img/apto-1.svg",
+    category: "Zonas", minutes: 5, image: photos.ciudad,
     body: [
       { p: "Tegucigalpa tiene opciones para cada etapa de la vida. Estas son algunas de las zonas que más buscan nuestros clientes." },
       { h: "Lomas del Guijarro y Lomas del Mayab", p: "Residencial de alto nivel, cerca de embajadas y restaurantes. Casas amplias y torres modernas." },
@@ -57,7 +58,7 @@ export const guides: Guide[] = [
     slug: "invertir-en-roatan",
     title: "Invertir en Roatán: lo que debes saber",
     summary: "Renta vacacional, compra frente al mar y cómo funciona la propiedad en las Islas de la Bahía.",
-    category: "Inversión", minutes: 4, image: "/img/playa-1.svg",
+    category: "Inversión", minutes: 4, image: photos.playa,
     body: [
       { p: "Roatán es uno de los destinos de buceo más visitados del Caribe y muchas familias compran para rentar por temporadas." },
       { h: "Zonas más buscadas", list: ["West Bay: playa de arena blanca y resorts", "West End: ambiente relajado, restaurantes y vida nocturna", "French Harbour y Sandy Bay: más residencial y tranquilo"] },

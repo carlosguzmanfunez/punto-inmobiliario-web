@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { CompareBar } from "@/components/Compare";
+import ImageFallback from "@/components/ImageFallback";
 import Comparar from "@/app/comparar/page";
 import Proyectos from "@/app/proyectos/page";
 import Servicios from "@/app/servicios/page";
@@ -59,6 +60,7 @@ function App() {
       <Footer />
       <CompareBar />
       <WhatsAppButton />
+      <ImageFallback />
     </AuthProvider>
   );
 }

@@ -1,3 +1,4 @@
+import { photos } from "./photos";
 // Geografía de Honduras usada en buscadores y filtros: los 18 departamentos y las
 // ciudades donde más se mueve el mercado inmobiliario.
 export const departments = [
@@ -43,10 +44,10 @@ export const popularZones = [
 
 // Ciudades destacadas en la portada, con una imagen de referencia.
 export const featuredCities = [
-  { name: "Tegucigalpa", department: "Francisco Morazán", image: "/img/casa-2.svg" },
-  { name: "San Pedro Sula", department: "Cortés", image: "/img/apto-2.svg" },
-  { name: "Roatán", department: "Islas de la Bahía", image: "/img/playa-1.svg" },
-  { name: "La Ceiba", department: "Atlántida", image: "/img/casa-4.svg" },
-  { name: "Comayagua", department: "Comayagua", image: "/img/casa-3.svg" },
-  { name: "Valle de Ángeles", department: "Francisco Morazán", image: "/img/casa-campo-1.svg" },
+  { name: "Tegucigalpa", department: "Francisco Morazán", image: photos.ciudad },
+  { name: "San Pedro Sula", department: "Cortés", image: photos.ciudadNoche },
+  { name: "Roatán", department: "Islas de la Bahía", image: photos.playa },
+  { name: "La Ceiba", department: "Atlántida", image: photos.resortPlaya },
+  { name: "Comayagua", department: "Comayagua", image: photos.casaClasica },
+  { name: "Valle de Ángeles", department: "Francisco Morazán", image: photos.valle },
 ];
