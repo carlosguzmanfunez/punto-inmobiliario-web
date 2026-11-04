@@ -7,17 +7,23 @@ import { fallbackFor } from "@/data/photos";
 export default function ImageFallback() {
   useEffect(() => {
     const swap = (img: HTMLImageElement) => {
-      if (img.dataset.fallback) return;
-      const fb = fallbackFor(img.currentSrc || img.src);
+      const src = img.currentSrc || img.src;
+      // Si la que falló es la propia ilustración, no insistir. Si React le puso otra foto
+      // remota al mismo elemento, sí se vuelve a cambiar.
+      if (img.dataset.fallback && img.dataset.fallback === src) return;
+      const fb = fallbackFor(src);
       if (!fb) return;
-      img.dataset.fallback = "1";
       img.removeAttribute("srcset");
       img.src = fb;
+      img.dataset.fallback = img.src;
     };
     const onError = (e: Event) => { if (e.target instanceof HTMLImageElement) swap(e.target); };
     document.addEventListener("error", onError, true);
-    document.querySelectorAll("img").forEach((img) => { if (img.complete && img.naturalWidth === 0 && img.src) swap(img); });
-    return () => document.removeEventListener("error", onError, true);
+    // Revisión de respaldo por si algún error ocurrió antes de que existiera el escucha.
+    const sweep = () => document.querySelectorAll("img").forEach((img) => { if (img.complete && img.naturalWidth === 0 && img.src) swap(img); });
+    sweep();
+    const t = window.setInterval(sweep, 1500);
+    return () => { document.removeEventListener("error", onError, true); window.clearInterval(t); };
   }, []);
   return null;
 }

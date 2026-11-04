@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { type Property } from "@/data/properties";
 import { vitrinaActive, type Seller } from "@/lib/backend";
-import { whatsappTo } from "@/lib/site";
+import { formatLempiras, site, whatsappTo } from "@/lib/site";
+import { fallbackFor } from "@/data/photos";
 import { useAuth } from "./AuthProvider";
 import { PinIcon, WhatsAppIcon } from "./Icons";
 import PropertyCard from "./PropertyCard";
@@ -49,11 +50,16 @@ export default function SellerPage({ slug }: { slug: string }) {
   const live = isOwner ? list.filter((p) => p.status === "publicada") : list;
   const shown = live.filter(filters.find((f) => f.key === filter)!.match);
   const counts = Object.fromEntries(filters.map((f) => [f.key, live.filter(f.match).length]));
+  // Portada: la foto de su mejor propiedad, oscurecida para que el texto se lea.
+  const cover = (live.find((p) => p.featured) ?? live[0])?.images[0];
+  const coverBg = cover ? `linear-gradient(100deg, rgba(10,22,40,.95) 30%, rgba(10,22,40,.7)), url("${cover}")${fallbackFor(cover) ? `, url("${fallbackFor(cover)}")` : ""}` : undefined;
+  const cities = new Set(live.map((p) => p.city)).size;
+  const fromL = live.filter((p) => p.operation === "venta").map((p) => (p.currency === "USD" ? p.price * site.usdRate : p.price));
 
   return (
     <>
       {!vitrinaActive(seller) && <div className="container"><div className="notice" style={{ marginTop: 16 }}>Vista previa: tu vitrina está inactiva y los compradores no la ven. <Link href="/panel?tab=vitrina">Activarla</Link></div></div>}
-      <section className="vitrina-hero">
+      <section className="vitrina-hero" style={coverBg ? { backgroundImage: coverBg } : undefined}>
         <div className="container vitrina-hero__inner">
           <div className="vitrina-hero__logo">{seller.logo ? <img src={seller.logo} alt={`Logo de ${seller.name}`} /> : seller.name.slice(0, 1).toUpperCase()}</div>
           <div className="vitrina-hero__text">
@@ -63,9 +69,15 @@ export default function SellerPage({ slug }: { slug: string }) {
             {seller.bio && <p className="vitrina-hero__bio">{seller.bio}</p>}
             <div className="vitrina-hero__actions">
               {seller.whatsapp && <a className="btn btn--wa" href={whatsappTo(seller.whatsapp, `Hola ${seller.name}, vi su vitrina en Punto Inmobiliario Hn y quiero más información.`)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={18} /> Escribir por WhatsApp</a>}
-              <span className="muted small">{live.length} {live.length === 1 ? "propiedad disponible" : "propiedades disponibles"}</span>
             </div>
           </div>
+          {live.length > 0 && (
+            <dl className="vitrina-stats">
+              <div><dt>Propiedades</dt><dd>{live.length}</dd></div>
+              <div><dt>{cities === 1 ? "Ciudad" : "Ciudades"}</dt><dd>{cities}</dd></div>
+              {fromL.length > 0 && <div><dt>Ventas desde</dt><dd>{formatLempiras(Math.min(...fromL))}</dd></div>}
+            </dl>
+          )}
           <div className="vitrina-hero__share"><ShareBox path={`/vendedores/${seller.slug}`} title={seller.name} message={`Conoce los proyectos de ${seller.name}`} /></div>
         </div>
       </section>
