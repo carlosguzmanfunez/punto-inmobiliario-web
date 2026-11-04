@@ -32,6 +32,10 @@ export default function AccountPage() {
 
   if (!profile) return <section className="section container"><p className="muted">Cargando tu cuenta…</p></section>;
   const favs = (list ?? []).filter((p) => favorites.has(p.id));
+  // Recomendaciones simples: puntúa cada propiedad por parecido con los favoritos.
+  const forYou = (list ?? []).filter((p) => !favorites.has(p.id))
+    .map((p) => ({ p, s: favs.reduce((acc, f) => acc + (f.type === p.type ? 3 : 0) + (f.city === p.city ? 2 : 0) + (f.operation === p.operation ? 1 : 0), 0) }))
+    .filter((x) => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 4).map((x) => x.p);
 
   return (
     <section className="section container account">
@@ -53,7 +57,15 @@ export default function AccountPage() {
       </div>
 
       {tab === "favoritos" && (favs.length ? (
-        <div className="grid-cards">{favs.map((p) => <PropertyCard key={p.id} p={p} />)}</div>
+        <>
+          <div className="grid-cards">{favs.map((p) => <PropertyCard key={p.id} p={p} />)}</div>
+          {forYou.length > 0 && (
+            <div className="account__more">
+              <div className="section__head"><div><h2 className="h3">Recomendadas para ti</h2><p className="muted small">Parecidas a las que guardaste: mismo tipo, ciudad u operación.</p></div><Link className="link-arrow small" href="/propiedades">Ver todas →</Link></div>
+              <div className="grid-cards">{forYou.map((p) => <PropertyCard key={p.id} p={p} />)}</div>
+            </div>
+          )}
+        </>
       ) : (
         <div className="empty"><p>Todavía no has guardado propiedades. Toca el corazón ♡ en cualquier propiedad para guardarla aquí.</p><Link className="btn btn--primary" href="/propiedades">Explorar propiedades</Link></div>
       ))}

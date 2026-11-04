@@ -949,3 +949,8 @@ a.kpi:hover { border-color: #c9d6ea; box-shadow: 0 8px 24px rgba(15,30,60,.08); 
 @media (max-width: 700px) { .activity li { grid-template-columns: 34px minmax(0, 1fr); } .activity li > .status, .activity li > .nowrap { grid-column: 2; justify-self: start; } }
 
 .t-person { line-height: 1.35; }
+.tips__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; font-size: .9rem; }
+.tips__list li { padding-left: 14px; border-left: 3px solid #cfe0f7; }
+.tips__list .link-btn { display: inline; font-size: .88rem; }
+.share-list--grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.account__more { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }

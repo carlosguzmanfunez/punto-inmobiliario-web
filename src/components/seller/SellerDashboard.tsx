@@ -9,6 +9,7 @@ import { formatLempiras, plural, whatsappTo } from "@/lib/site";
 import { useAuth, usePlans } from "../AuthProvider";
 import AdminShell, { type SellerTab } from "../admin/AdminShell";
 import ReceiptButton from "../ReceiptButton";
+import { ColumnChart, Delta, type Col } from "../admin/Charts";
 import { EditIcon, EyeIcon, ImageIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import ShareBox from "../ShareBox";
 import PayPanel from "./PayPanel";
@@ -74,19 +75,37 @@ function StatusPill({ p, pending }: { p: Property; pending: boolean }) {
 }
 
 function Summary({ props, inq, seller, payments, onPay }: { props: Property[]; inq: Inquiry[]; seller: Seller | null; payments: Payment[]; onPay: (p: Paying) => void }) {
+  const plans = usePlans();
+  const DAY = 864e5;
   const live = props.filter((p) => isLive(p));
   const views = props.reduce((s, p) => s + (p.views ?? 0), 0);
   const expiring = live.filter((p) => daysLeft(p.paidUntil) <= 7);
   const drafts = props.filter((p) => (p.status === "borrador" || p.status === "rechazada") && !pendingFor(payments, p.id));
   const vit = vitrinaActive(seller);
+  const within = (i: Inquiry, a: number, b: number) => { const t = Date.now() - new Date(i.createdAt).getTime(); return t >= a * DAY && t < b * DAY; };
+  const last30 = inq.filter((i) => within(i, 0, 30)).length, prev30 = inq.filter((i) => within(i, 30, 60)).length;
+  const weeks: Col[] = Array.from({ length: 12 }, (_, k) => {
+    const a = (11 - k) * 7, d = new Date(Date.now() - a * DAY);
+    return { label: `${d.getDate()}/${d.getMonth() + 1}`, value: inq.filter((i) => within(i, a, a + 7)).length, tip: `Semana al ${formatDate(d.toISOString())}` };
+  });
+  const perf = [...props].sort((a, b) => (b.views ?? 0) - (a.views ?? 0)).map((p) => ({ p, leads: inq.filter((i) => i.propertyId === p.id).length }));
+  const best = perf.find((x) => isLive(x.p) && !x.p.featured);
+  const fewPhotos = live.filter((p) => p.images.length < 3);
   return (
     <>
-      <div className="admin__title"><h1 className="h2">Hola, {seller?.name ?? "vendedor"}</h1><Link className="btn btn--primary" href="/panel/propiedad"><PlusIcon size={18} /> Nueva propiedad</Link></div>
-      <div className="stats">
-        <div className="stat"><span className="stat__label">Publicaciones activas</span><span className="stat__value">{live.length}</span><span className="stat__hint">{props.length} en total</span></div>
-        <div className="stat"><span className="stat__label">Visitas</span><span className="stat__value">{views.toLocaleString("es-HN")}</span><span className="stat__hint">a todas tus propiedades</span></div>
-        <Link href="/panel?tab=consultas" className="stat"><span className="stat__label">Consultas nuevas</span><span className="stat__value">{inq.filter((i) => i.status === "nueva").length}</span><span className="stat__hint">{inq.length} {inq.length === 1 ? "recibida" : "recibidas"}</span></Link>
-        <Link href="/panel?tab=vitrina" className="stat"><span className="stat__label">Mi vitrina</span><span className="stat__value">{vit ? `${daysLeft(seller?.vitrinaUntil)} ${daysLeft(seller?.vitrinaUntil) === 1 ? "día" : "días"}` : "Inactiva"}</span><span className="stat__hint">{vit ? "restantes" : "actívala para tener tu página"}</span></Link>
+      <div className="dash-head">
+        <div><p className="dash-head__eyebrow">Panel del vendedor</p><h1 className="h2">Hola, {seller?.name ?? "vendedor"}</h1>
+          <p className="muted">{drafts.length || expiring.length ? `Tienes ${[drafts.length && plural(drafts.length, "publicación lista para activar", "publicaciones listas para activar"), expiring.length && plural(expiring.length, "plan por vencer", "planes por vencer")].filter(Boolean).join(" y ")}.` : "Todo al día. Comparte tus links para recibir más consultas."}</p></div>
+        <div className="dash-head__actions">
+          {seller && <Link className="btn btn--outline btn--sm" href={`/vendedores/${seller.slug}`}>Ver mi vitrina</Link>}
+          <Link className="btn btn--primary btn--sm" href="/panel/propiedad"><PlusIcon size={16} /> Nueva propiedad</Link>
+        </div>
+      </div>
+      <div className="kpis kpis--4">
+        <Link href="/panel?tab=propiedades" className="kpi"><span className="kpi__label">Publicaciones activas</span><span className="kpi__value">{live.length}</span><span className="kpi__foot muted small">{props.length} en total</span></Link>
+        <div className="kpi"><span className="kpi__label">Visitas</span><span className="kpi__value">{views.toLocaleString("es-HN")}</span><span className="kpi__foot muted small">{live.length ? Math.round(views / Math.max(1, live.length)) : 0} por publicación</span></div>
+        <Link href="/panel?tab=consultas" className="kpi"><span className="kpi__label">Consultas (30 días)</span><span className="kpi__value">{last30}</span><span className="kpi__foot"><Delta cur={last30} prev={prev30} /><span className="muted small">{inq.filter((i) => i.status === "nueva").length} sin responder</span></span></Link>
+        <Link href="/panel?tab=vitrina" className="kpi"><span className="kpi__label">Mi vitrina</span><span className="kpi__value">{vit ? plural(daysLeft(seller?.vitrinaUntil), "día", "días") : "Inactiva"}</span><span className="kpi__foot muted small">{vit ? "restantes" : `desde ${formatLempiras(plans.vitrina.price)} al mes`}</span></Link>
       </div>
       {props.length === 0 ? (
         <div className="empty">
@@ -94,24 +113,56 @@ function Summary({ props, inq, seller, payments, onPay }: { props: Property[]; i
           <Link className="btn btn--primary" href="/panel/propiedad"><PlusIcon size={18} /> Crear mi primera publicación</Link>
         </div>
       ) : (
-        <div className="panels">
-          <div className="panel">
-            <h2 className="h3">Por hacer</h2>
-            {drafts.length === 0 && expiring.length === 0 ? <p className="muted">Todo al día.</p> : (
+        <div className="dash-grid">
+          <section className="panel dash-span-2">
+            <div className="panel__head"><h2 className="h3">Consultas recibidas</h2><span className="muted small">por semana · últimas 12 semanas</span></div>
+            <ColumnChart data={weeks} label="Consultas por semana" color="#1baf7a" height={180} />
+          </section>
+          <section className="panel">
+            <div className="panel__head"><h2 className="h3">Por hacer</h2></div>
+            {drafts.length === 0 && expiring.length === 0 ? <p className="muted small">Todo al día.</p> : (
               <ul className="todo">
                 {drafts.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">{p.status === "rechazada" ? "Revisa los datos y vuelve a enviarla" : "Lista para publicar"}</span></span><button className="btn btn--primary btn--sm" onClick={() => onPay({ property: p })}>Publicar</button></li>)}
-                {expiring.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">Vence en {daysLeft(p.paidUntil)} {daysLeft(p.paidUntil) === 1 ? "día" : "días"}</span></span><button className="btn btn--outline btn--sm" onClick={() => onPay({ property: p })}>Renovar</button></li>)}
+                {expiring.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">Vence en {plural(daysLeft(p.paidUntil), "día", "días")}</span></span><button className="btn btn--outline btn--sm" onClick={() => onPay({ property: p })}>Renovar</button></li>)}
               </ul>
             )}
-          </div>
-          <div className="panel">
-            <h2 className="h3">Tus links para compartir</h2>
-            {live.length === 0 ? <p className="muted">Cuando una publicación esté activa, aquí tendrás su link para enviarlo a tus compradores.</p> : (
-              <ul className="share-list">
-                {live.slice(0, 4).map((p) => <li key={p.id}><span className="small"><strong>{p.title}</strong></span><ShareBox compact path={`/propiedades/${p.slug}`} title={p.title} message={`Te comparto esta propiedad: ${p.title} (${formatPrice(p)})`} /></li>)}
+          </section>
+          <section className="panel dash-span-2">
+            <div className="panel__head"><h2 className="h3">Desempeño de tus propiedades</h2><Link href="/panel?tab=propiedades" className="link-arrow small">Administrar →</Link></div>
+            <div className="table-wrap table-wrap--flat">
+              <table className="table table--compact">
+                <thead><tr><th>Propiedad</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th className="num">Conversión</th></tr></thead>
+                <tbody>
+                  {perf.map(({ p, leads }) => (
+                    <tr key={p.id}>
+                      <td><div className="t-prop"><img src={p.images[0] ?? "/img/casa-1.svg"} alt="" /><div><Link href={`/propiedades/${p.slug}`} className="t-prop__title">{p.title}</Link><span className="muted small">{formatPrice(p)}</span></div></div></td>
+                      <td><StatusPill p={p} pending={pendingFor(payments, p.id)} />{isLive(p) && <span className="muted small"> {plural(daysLeft(p.paidUntil), "día", "días")}</span>}</td>
+                      <td className="num">{(p.views ?? 0).toLocaleString("es-HN")}</td>
+                      <td className="num">{leads}</td>
+                      <td className="num">{p.views ? `${((leads / p.views) * 100).toFixed(1)}%` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <section className="panel tips">
+            <div className="panel__head"><h2 className="h3">Consejos para vender más</h2></div>
+            <ul className="tips__list">
+              {best && <li><strong>Destaca “{best.p.title}”.</strong> Es tu publicación más vista; como destacada aparece en la portada y primero en las búsquedas. <button className="link-btn" onClick={() => onPay({ property: best.p })}>Destacar por {formatLempiras(plans.destacada.price)} →</button></li>}
+              {fewPhotos.length > 0 && <li><strong>Agrega más fotos.</strong> {plural(fewPhotos.length, "publicación tiene", "publicaciones tienen")} menos de 3 fotos. Las que tienen 8 o más reciben más consultas.</li>}
+              {!vit && <li><strong>Activa tu vitrina.</strong> Una página con tu logo y todas tus propiedades en un solo link. <Link className="link-btn" href="/panel?tab=vitrina">Ver vitrina →</Link></li>}
+              <li><strong>Responde rápido.</strong> Contesta por WhatsApp en menos de una hora: es cuando el comprador está más interesado.</li>
+            </ul>
+          </section>
+          <section className="panel dash-span-3">
+            <div className="panel__head"><h2 className="h3">Tus links para compartir</h2></div>
+            {live.length === 0 ? <p className="muted small">Cuando una publicación esté activa, aquí tendrás su link para enviarlo a tus compradores.</p> : (
+              <ul className="share-list share-list--grid">
+                {live.slice(0, 6).map((p) => <li key={p.id}><span className="small"><strong>{p.title}</strong></span><ShareBox compact path={`/propiedades/${p.slug}`} title={p.title} message={`Te comparto esta propiedad: ${p.title} (${formatPrice(p)})`} /></li>)}
               </ul>
             )}
-          </div>
+          </section>
         </div>
       )}
     </>
