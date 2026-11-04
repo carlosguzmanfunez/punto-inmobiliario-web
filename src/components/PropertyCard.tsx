@@ -4,8 +4,9 @@ import { AreaIcon, BathIcon, BedIcon, CalendarIcon, CarIcon, CheckIcon } from ".
 import FavoriteButton from "./FavoriteButton";
 import Price from "./Price";
 import { CompareButton } from "./Compare";
+import CardSlides from "./CardSlides";
 
-// Tarjeta estilo Airbnb: foto grande con esquinas redondeadas, carrusel deslizable
+// Tarjeta estilo Airbnb: foto grande con esquinas redondeadas, carrusel con flechas
 // (scroll-snap), etiquetas y datos clave debajo.
 export default function PropertyCard({ p, layout = "grid" }: { p: Property; layout?: "grid" | "list" }) {
   const href = `/propiedades/${p.slug}`;
@@ -15,13 +16,7 @@ export default function PropertyCard({ p, layout = "grid" }: { p: Property; layo
   return (
     <article className={`card${layout === "list" ? " card--list" : ""}`}>
       <div className="card__media">
-        <div className="card__slides" tabIndex={0} aria-label={`Fotos de ${p.title}`}>
-          {images.map((src, i) => (
-            <Link key={src + i} href={href} className="card__slide">
-              <img src={src} alt={`${p.title}, foto ${i + 1}`} loading="lazy" />
-            </Link>
-          ))}
-        </div>
+        <CardSlides images={images} href={href} title={p.title} />
         <div className="card__badges">
           <span className={`badge badge--${p.operation}`}>{p.operation === "venta" ? "Venta" : "Alquiler"}</span>
           {p.featured && <span className="badge badge--accent">Destacada</span>}
@@ -30,11 +25,6 @@ export default function PropertyCard({ p, layout = "grid" }: { p: Property; layo
         </div>
         <FavoriteButton id={p.id} />
         <CompareButton id={p.id} className="card__compare" />
-        {images.length > 1 && (
-          <div className="card__dots" aria-hidden>
-            {images.map((_, i) => <span key={i} />)}
-          </div>
-        )}
       </div>
       <Link href={href} className="card__body">
         <div className="card__row">

@@ -8,7 +8,7 @@ import type { Seller } from "@/lib/backend";
 import { formatLempiras, whatsappLink } from "@/lib/site";
 import { useAuth, usePlans } from "./AuthProvider";
 import { useProperties } from "./useProperties";
-import { BuildingIcon, CheckIcon, GlobeIcon, HomeIcon, KeyIcon, PinIcon, ShieldIcon, StoreIcon, WhatsAppIcon } from "./Icons";
+import { BuildingIcon, CheckIcon, GlobeIcon, HomeIcon, KeyIcon, PinIcon, StoreIcon, WhatsAppIcon } from "./Icons";
 
 const groups: { title: string; icon: React.ReactNode; types: PropertyType[] }[] = [
   { title: "Residencial", icon: <HomeIcon size={22} />, types: ["casa", "apartamento", "terreno"] },
@@ -19,24 +19,20 @@ const typeImg: Record<PropertyType, string> = {
   local: photos.local, oficina: photos.oficina, bodega: photos.bodega,
 };
 
-// Franja de confianza que flota sobre el final de la portada. Las cifras salen del inventario real.
+// Franja de confianza que flota sobre el final de la portada.
 export function TrustBar() {
-  const { list } = useProperties();
-  const plans = usePlans();
-  const n = list?.length;
-  const cities = list ? new Set(list.map((p) => p.city)).size : undefined;
   const items = [
-    { icon: <ShieldIcon size={22} />, value: n ?? "…", label: "propiedades verificadas" },
-    { icon: <PinIcon size={22} />, value: cities ?? "…", label: "ciudades de Honduras" },
-    { icon: <GlobeIcon size={22} />, value: "A distancia", label: "compra desde EE. UU. o España" },
-    { icon: <KeyIcon size={22} />, value: `Desde ${formatLempiras(plans.publicacion.price)}`, label: "para publicar 30 días" },
+    { icon: <CheckIcon size={16} />, label: "Propiedades verificadas", ok: true },
+    { icon: <PinIcon size={16} />, label: "Presencia en los 18 departamentos", sub: "del país" },
+    { icon: <GlobeIcon size={16} />, label: "Desde el extranjero", sub: "compra desde EE. UU. o España" },
+    { icon: <KeyIcon size={16} />, label: "Premium para vendedores" },
   ];
   return (
     <div className="container trust-bar">
       {items.map((i) => (
         <div key={i.label} className="trust-bar__item">
-          <span className="trust-bar__icon">{i.icon}</span>
-          <span><strong>{i.value}</strong><small>{i.label}</small></span>
+          <span className={`trust-bar__icon${i.ok ? " trust-bar__icon--ok" : ""}`}>{i.icon}</span>
+          <span><strong>{i.label}</strong>{i.sub && <small>{i.sub}</small>}</span>
         </div>
       ))}
     </div>
@@ -156,12 +152,11 @@ export function PublishLead() {
 }
 
 export function PublishSteps() {
-  const plans = usePlans();
   return (
     <ol className="publish-steps">
       <li><span className="steps__n">1</span><div><strong>Crea tu cuenta de vendedor</strong><p className="muted small">Gratis, en un minuto. O déjanos tus datos y un asesor lo hace contigo.</p></div></li>
       <li><span className="steps__n">2</span><div><strong>Sube fotos y detalles</strong><p className="muted small">Precio, ubicación, amenidades y todo lo que hace especial tu propiedad.</p></div></li>
-      <li><span className="steps__n">3</span><div><strong>Activa tu plan y comparte tu link</strong><p className="muted small">Desde {formatLempiras(plans.publicacion.price)} por {plans.publicacion.days} días. Recibes un link profesional para enviar por WhatsApp.</p></div></li>
+      <li><span className="steps__n">3</span><div><strong>Llena un formulario corto (30 segundos)</strong><p className="muted small">Las especificaciones de tu propiedad y quedas listo para publicar.</p></div></li>
       <li className="publish-steps__perks">
         {["Consultas directo a tu WhatsApp", "Estadísticas de visitas", "Tu propia vitrina si eres desarrollador"].map((t) => <span key={t}><CheckIcon size={16} /> {t}</span>)}
       </li>

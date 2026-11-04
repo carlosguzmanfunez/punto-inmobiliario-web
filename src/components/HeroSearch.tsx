@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { allCities, departments, popularZones } from "@/data/geo";
+import { departments } from "@/data/geo";
 import { typePlural, type PropertyType } from "@/data/properties";
 import { SearchIcon } from "./Icons";
 
@@ -18,7 +18,7 @@ export function budgetLabel([min, max]: readonly [number, number]) {
   return `${f(min)} a ${f(max)}`;
 }
 
-// Buscador principal: Todas / Comprar / Alquilar, y luego tipo, ubicación, habitaciones y presupuesto.
+// Buscador principal: Todas / Comprar / Alquilar, y luego departamento, tipo, habitaciones y presupuesto.
 export default function HeroSearch() {
   const router = useRouter();
   const [op, setOp] = useState<"" | "venta" | "alquiler">("");
@@ -32,12 +32,7 @@ export default function HeroSearch() {
     const n = new URLSearchParams();
     if (op) n.set("operacion", op);
     if (tipo) n.set("tipo", tipo);
-    const w = where.trim();
-    if (w) {
-      const dep = departments.find((d) => d.toLowerCase() === w.toLowerCase());
-      const city = allCities.find((c) => c.toLowerCase() === w.toLowerCase());
-      if (dep) n.set("depto", dep); else if (city) n.set("ciudad", city); else n.set("q", w);
-    }
+    if (where) n.set("depto", where);
     if (hab) n.set("hab", hab);
     if (budget) { const [a, b] = budget.split("-"); if (+a) n.set("pmin", a); if (+b) n.set("pmax", b); }
     router.push(`/propiedades${n.size ? `?${n}` : ""}`);
@@ -56,12 +51,11 @@ export default function HeroSearch() {
       </div>
       <div className="hero-box">
         <label className="hero-box__field hero-box__field--wide">
-          <span>Ubicación</span>
-          <input type="search" list="hero-places" autoComplete="off" value={where} onChange={(e) => setWhere(e.target.value)}
-            placeholder="Ciudad, departamento o colonia" />
-          <datalist id="hero-places">
-            {[...allCities, ...departments, ...popularZones].map((c) => <option key={c} value={c} />)}
-          </datalist>
+          <span>Departamento</span>
+          <select value={where} onChange={(e) => setWhere(e.target.value)}>
+            <option value="">Toda Honduras</option>
+            {departments.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
         </label>
         <label className="hero-box__field">
           <span>Tipo</span>
