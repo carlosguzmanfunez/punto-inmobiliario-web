@@ -25,7 +25,7 @@ const plusDays = (from: string | null | undefined, days: number) => {
 };
 
 function seed(): DB {
-  const admin: DemoUser = { id: "u-admin", email: DEMO_ADMIN.email, password: DEMO_ADMIN.password, fullName: "Administrador", phone: "+504 8909-2222", role: "admin", createdAt: "2026-10-01T12:00:00.000Z" };
+  const admin: DemoUser = { id: "u-admin", email: DEMO_ADMIN.email, password: DEMO_ADMIN.password, fullName: "Administrador", phone: "+504 8909-2285", role: "admin", createdAt: "2026-10-01T12:00:00.000Z" };
   const maria: DemoUser = { id: "u-maria", email: DEMO_BUYER.email, password: DEMO_BUYER.password, fullName: "María López", phone: "+1 305 555 0182", role: "user", createdAt: "2026-10-20T15:30:00.000Z" };
   const seller: DemoUser = { id: "u-morazan", email: DEMO_SELLER.email, password: DEMO_SELLER.password, fullName: "Ricardo Fiallos", phone: "+504 9876-5432", role: "seller", createdAt: "2026-10-12T10:00:00.000Z" };
   const morazan: Seller = {

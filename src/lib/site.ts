@@ -4,8 +4,8 @@ export const site = {
   shortName: "Punto Inmobiliario",
   tagline: "Tu punto de encuentro para comprar, alquilar y vender en Honduras",
   // Número en formato internacional sin "+" ni espacios.
-  whatsapp: "5048909222285",
-  whatsappDisplay: "+504 890922-2285",
+  whatsapp: "50489092285",
+  whatsappDisplay: "+504 8909-2285",
   email: "info@puntoinmobiliariohn.com",
   address: "Tegucigalpa, Honduras",
   hours: "Lunes a sábado, 8:00 a. m. a 6:00 p. m.",
