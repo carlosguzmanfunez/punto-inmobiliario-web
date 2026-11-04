@@ -66,6 +66,8 @@ export type Payment = {
   status: PaymentStatus;
   createdAt: string;
   confirmedAt: string | null;
+  // Foto del comprobante: ruta privada en Supabase o imagen en modo demo.
+  receipt?: string | null;
 };
 
 // Ajustes del negocio que el administrador cambia desde su panel.
@@ -110,7 +112,9 @@ export interface Backend {
   listVitrinas(): Promise<Seller[]>;
 
   // Pagos de planes.
-  requestPayment(d: { kind: PlanKind; propertyId: string | null; reference: string }): Promise<void>;
+  requestPayment(d: { kind: PlanKind; propertyId: string | null; reference: string; receipt?: File | null }): Promise<void>;
+  // Link temporal para ver un comprobante (solo el administrador y el vendedor dueño).
+  receiptUrl(receipt: string): Promise<string>;
   listMyPayments(): Promise<Payment[]>;
   listPayments(): Promise<Payment[]>;
   confirmPayment(id: string): Promise<void>;

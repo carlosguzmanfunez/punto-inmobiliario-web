@@ -23,7 +23,7 @@ const toSeller = (r: Row): Seller => ({
 
 const toPayment = (r: Row): Payment => ({
   id: r.id, sellerId: r.seller_id, kind: r.kind, propertyId: r.property_id, amount: Number(r.amount), reference: r.reference,
-  status: r.status, createdAt: r.created_at, confirmedAt: r.confirmed_at,
+  status: r.status, createdAt: r.created_at, confirmedAt: r.confirmed_at, receipt: r.receipt ?? null,
   sellerName: r.sellers?.name, propertyTitle: r.properties?.title,
 });
 
@@ -179,10 +179,22 @@ export function createSupabaseBackend(url: string, key: string): Backend {
     },
     async deleteSavedSearch(sid) { const { error } = await sb.from("saved_searches").delete().eq("id", sid); fail(error); },
 
-    async requestPayment({ kind, propertyId, reference }) {
+    async requestPayment({ kind, propertyId, reference, receipt }) {
       const id = await uid(); if (!id) throw new Error("Debes iniciar sesión.");
-      const { error } = await sb.from("payments").insert({ seller_id: id, kind, property_id: propertyId, amount: 0, reference: reference.trim() });
+      let path: string | null = null;
+      if (receipt) {
+        // Bucket privado: cada vendedor sube a su carpeta y solo él y el administrador la ven.
+        const ext = (receipt.name.split(".").pop() || "jpg").toLowerCase();
+        path = `${id}/${crypto.randomUUID()}.${ext}`;
+        const up = await sb.storage.from("payment-receipts").upload(path, receipt, { contentType: receipt.type, upsert: false });
+        fail(up.error);
+      }
+      const { error } = await sb.from("payments").insert({ seller_id: id, kind, property_id: propertyId, amount: 0, reference: reference.trim(), receipt: path });
       fail(error);
+    },
+    async receiptUrl(receipt) {
+      const { data, error } = await sb.storage.from("payment-receipts").createSignedUrl(receipt, 600);
+      fail(error); return data!.signedUrl;
     },
     async listMyPayments() {
       const id = await uid(); if (!id) return [];

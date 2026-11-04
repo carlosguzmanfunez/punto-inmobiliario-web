@@ -844,3 +844,7 @@ body.no-scroll { overflow: hidden; }
 .bank-info { display: block; margin: 8px 0; padding: 10px 12px; background: var(--tint); border: 1px dashed var(--line); border-radius: 10px; font-weight: 600; white-space: pre-line; }
 @media (min-width: 641px) { .header-actions .btn--primary span { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; } }
 @media (min-width: 1320px) { .main-nav > ul > li:nth-child(5) .nav-link { min-width: 104px; } }
+
+/* Visor de comprobante cuando el navegador no deja abrir otra pestaña */
+.receipt-view { position: fixed; inset: 0; z-index: 90; background: rgba(8,20,40,.75); display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; }
+.receipt-view img { max-width: min(92vw, 520px); max-height: 80vh; border-radius: 12px; background: #fff; }

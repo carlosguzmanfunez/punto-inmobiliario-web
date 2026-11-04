@@ -13,7 +13,7 @@ type DB = {
   settings?: Settings;
 };
 
-const KEY = "pihn-demo-v3";
+const KEY = "pihn-demo-v4";
 export const DEMO_ADMIN = { email: "admin@demo.hn", password: "admin123" };
 export const DEMO_SELLER = { email: "ventas@morazan.hn", password: "vende123" };
 export const DEMO_BUYER = { email: "maria@ejemplo.com", password: "maria123" };
@@ -55,7 +55,7 @@ function seed(): DB {
     sellers: [morazan],
     properties: p,
     payments: [
-      { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: draft.id, amount: plans.publicacion.price, reference: "Transferencia BAC #448812", status: "pendiente", createdAt: now(), confirmedAt: null },
+      { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: draft.id, amount: plans.publicacion.price, reference: "Transferencia BAC #448812", status: "pendiente", createdAt: now(), confirmedAt: null, receipt: sampleReceipt(plans.publicacion.price) },
       { id: uid(), sellerId: seller.id, kind: "vitrina", propertyId: null, amount: plans.vitrina.price, reference: "Depósito Atlántida", status: "pagado", createdAt: new Date(Date.now() - 9 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 9 * DAY).toISOString() },
       { id: uid(), sellerId: seller.id, kind: "destacada", propertyId: "apartamento-torre-sps", amount: plans.destacada.price, reference: "Transferencia BAC #440219", status: "pagado", createdAt: new Date(Date.now() - 12 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 12 * DAY).toISOString() },
       { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: "terreno-carretera-santa-lucia", amount: plans.publicacion.price, reference: "Depósito Ficohsa", status: "pagado", createdAt: new Date(Date.now() - 25 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 25 * DAY).toISOString() },
@@ -124,6 +124,12 @@ function newSeller(u: DemoUser, name: string, db: DB): Seller {
 }
 
 // Reduce la foto a un máximo de 1600 px para que quepa en el navegador.
+// Comprobante de ejemplo para el modo demo (una imagen simple, no un documento real).
+function sampleReceipt(amount: number) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="420" viewBox="0 0 360 420"><rect width="360" height="420" fill="#f7f9fc"/><rect x="20" y="20" width="320" height="380" rx="14" fill="#fff" stroke="#d8dee8"/><text x="180" y="70" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="700" fill="#0b5cc2">Comprobante de ejemplo</text><text x="180" y="98" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#6b7480">Modo de prueba</text><g font-family="sans-serif" font-size="15" fill="#1b1f24"><text x="44" y="160">Referencia</text><text x="316" y="160" text-anchor="end">#448812</text><text x="44" y="200">Monto</text><text x="316" y="200" text-anchor="end">L ${amount.toLocaleString("en-US")}</text><text x="44" y="240">Concepto</text><text x="316" y="240" text-anchor="end">Publicación</text></g><text x="180" y="340" text-anchor="middle" font-family="sans-serif" font-size="40" fill="#127a43">✓</text></svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
 function resizeImage(file: File, max = 1600): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -277,7 +283,7 @@ export function createDemoBackend(): Backend {
       db.searches = db.searches.filter((x) => !(x.id === id && x.userId === u.id)); save(db);
     },
 
-    async requestPayment({ kind, propertyId, reference }) {
+    async requestPayment({ kind, propertyId, reference, receipt }) {
       const db = load(); const u = requireSeller(db);
       if (!db.sellers.some((s) => s.id === u.id)) db.sellers.push(newSeller(u, u.fullName, db));
       if (propertyId) {
@@ -285,9 +291,10 @@ export function createDemoBackend(): Backend {
         if (!p || (p.ownerId !== u.id && u.role !== "admin")) throw new Error("No encontramos esa publicación.");
         if (p.status !== "publicada") p.status = "pendiente";
       }
-      db.payments.push({ id: uid(), sellerId: u.id, kind, propertyId, amount: plansWith(db.settings?.prices)[kind].price, reference: reference.trim(), status: "pendiente", createdAt: now(), confirmedAt: null });
+      db.payments.push({ id: uid(), sellerId: u.id, kind, propertyId, amount: plansWith(db.settings?.prices)[kind].price, reference: reference.trim(), status: "pendiente", createdAt: now(), confirmedAt: null, receipt: receipt ? await resizeImage(receipt, 1100) : null });
       save(db); await delay(null);
     },
+    async receiptUrl(receipt) { return receipt; },
     async listMyPayments() { const db = load(); const u = requireUser(db); return delay(withPaymentNames(db, db.payments.filter((x) => x.sellerId === u.id))); },
     async listPayments() { const db = load(); requireAdmin(db); return delay(withPaymentNames(db, db.payments)); },
     async confirmPayment(id) {

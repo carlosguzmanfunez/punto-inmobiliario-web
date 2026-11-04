@@ -210,12 +210,15 @@ create table if not exists public.payments (
   reference text not null default '',
   status text not null default 'pendiente' check (status in ('pendiente', 'pagado', 'rechazado')),
   created_at timestamptz not null default now(),
-  confirmed_at timestamptz
+  confirmed_at timestamptz,
+  receipt text
 );
+alter table public.payments add column if not exists receipt text;
 alter table public.payments enable row level security;
 create policy "vendedor ve sus pagos" on public.payments for select using (seller_id = auth.uid() or public.is_admin());
 create policy "vendedor solicita pago" on public.payments for insert with check (
   seller_id = auth.uid() and status = 'pendiente' and confirmed_at is null
+  and (receipt is null or receipt like auth.uid()::text || '/%')
   and (property_id is null or exists (select 1 from public.properties p where p.id = property_id and p.owner_id = auth.uid()))
 );
 
@@ -324,3 +327,12 @@ insert into storage.buckets (id, name, public) values ('property-images', 'prope
   on conflict (id) do nothing;
 create policy "admin y vendedores suben fotos" on storage.objects for insert with check (bucket_id = 'property-images' and public.is_seller());
 create policy "admin borra fotos" on storage.objects for delete using (bucket_id = 'property-images' and public.is_admin());
+
+-- ---------- Comprobantes de pago (privados) ----------
+-- Cada vendedor sube a la carpeta con su id; solo él y el administrador pueden verlos.
+insert into storage.buckets (id, name, public) values ('payment-receipts', 'payment-receipts', false)
+  on conflict (id) do nothing;
+create policy "vendedor sube su comprobante" on storage.objects for insert with check (
+  bucket_id = 'payment-receipts' and public.is_seller() and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "vendedor y admin ven comprobantes" on storage.objects for select using (
+  bucket_id = 'payment-receipts' and (public.is_admin() or (storage.foldername(name))[1] = auth.uid()::text));

@@ -15,6 +15,7 @@ export default function PayPanel({ property, vitrina, onDone, onClose }: {
   const options: PlanKind[] = vitrina ? ["vitrina"] : ["publicacion", "destacada"];
   const [kind, setKind] = useState<PlanKind>(options[0]);
   const [reference, setReference] = useState("");
+  const [receipt, setReceipt] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const plan = plans[kind];
@@ -49,14 +50,21 @@ export default function PayPanel({ property, vitrina, onDone, onClose }: {
             <a className="btn btn--wa btn--sm" href={whatsappLink(ask)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={16} /> Pedir datos de pago</a>
           </li>
         )}
-        <li>Escribe el número de referencia de tu pago y envíalo. Activamos tu {vitrina ? "vitrina" : "publicación"} en cuanto lo confirmemos.</li>
+        <li>Escribe el número de referencia y, si puedes, sube la foto del comprobante. Activamos tu {vitrina ? "vitrina" : "publicación"} en cuanto lo confirmemos.</li>
       </ol>
       <form className="form" onSubmit={async (e) => {
         e.preventDefault(); setError(""); setBusy(true);
-        try { await backend.requestPayment({ kind, propertyId: property?.id ?? null, reference }); onDone(); }
+        try { await backend.requestPayment({ kind, propertyId: property?.id ?? null, reference, receipt }); onDone(); }
         catch (err) { setError((err as Error).message); setBusy(false); }
       }}>
         <label>Referencia del pago<input required value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Ej. Transferencia BAC #123456" /></label>
+        <label>Foto del comprobante <span className="muted small">(opcional, ayuda a confirmar más rápido)</span>
+          <input type="file" accept="image/*" onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            if (f && f.size > 8 * 1024 * 1024) { setError("La foto pesa más de 8 MB. Toma una captura o una foto más pequeña."); e.target.value = ""; setReceipt(null); return; }
+            setError(""); setReceipt(f);
+          }} />
+        </label>
         {error && <p className="form__error">{error}</p>}
         <button className="btn btn--primary" disabled={busy}>{busy ? "Enviando…" : `Enviar pago de ${formatLempiras(plan.price)}`}</button>
       </form>

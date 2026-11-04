@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { downloadCsv, today } from "@/lib/csv";
+import ReceiptButton from "../ReceiptButton";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
@@ -373,7 +374,7 @@ function PaymentsTab({ payments, onChange }: { payments: Payment[]; onChange: ()
                   <td><strong>{x.sellerName ?? "Vendedor"}</strong><br /><span className="muted small">{x.kind === "vitrina" ? "Vitrina" : x.propertyTitle ?? "Propiedad eliminada"}</span></td>
                   <td>{plans[x.kind].name}</td>
                   <td className="num nowrap">{formatLempiras(x.amount)}</td>
-                  <td className="small">{x.reference}</td>
+                  <td className="small">{x.reference}{x.receipt ? <><br /><ReceiptButton receipt={x.receipt} /></> : x.status === "pendiente" && <><br /><span className="muted">Sin comprobante</span></>}</td>
                   <td><span className={`pay-status pay-status--${x.status}`}>{paymentStatusLabel[x.status]}</span></td>
                   <td className="actions">
                     {x.status === "pendiente" && <>

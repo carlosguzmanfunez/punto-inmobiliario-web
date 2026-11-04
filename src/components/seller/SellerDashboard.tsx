@@ -8,6 +8,7 @@ import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/lab
 import { formatLempiras, whatsappTo } from "@/lib/site";
 import { useAuth, usePlans } from "../AuthProvider";
 import AdminShell, { type SellerTab } from "../admin/AdminShell";
+import ReceiptButton from "../ReceiptButton";
 import { EditIcon, EyeIcon, ImageIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import ShareBox from "../ShareBox";
 import PayPanel from "./PayPanel";
@@ -284,7 +285,7 @@ function Plans({ payments }: { payments: Payment[] }) {
                   <td>{plans[x.kind].name}</td>
                   <td>{x.kind === "vitrina" ? "Mi vitrina" : x.propertyTitle ?? "Propiedad eliminada"}</td>
                   <td className="num nowrap">{formatLempiras(x.amount)}</td>
-                  <td className="small">{x.reference}</td>
+                  <td className="small">{x.reference}{x.receipt && <><br /><ReceiptButton receipt={x.receipt} /></>}</td>
                   <td><span className={`pay-status pay-status--${x.status}`}>{paymentStatusLabel[x.status]}</span></td>
                 </tr>
               ))}
