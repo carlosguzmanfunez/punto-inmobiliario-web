@@ -848,3 +848,7 @@ body.no-scroll { overflow: hidden; }
 /* Visor de comprobante cuando el navegador no deja abrir otra pestaña */
 .receipt-view { position: fixed; inset: 0; z-index: 90; background: rgba(8,20,40,.75); display: grid; place-items: center; align-content: center; gap: 12px; padding: 16px; }
 .receipt-view img { max-width: min(92vw, 520px); max-height: 80vh; border-radius: 12px; background: #fff; }
+/* Iconos de compartir legibles sobre el fondo oscuro de la vitrina */
+.vitrina-hero__share .share__social .muted { color: rgba(255,255,255,.75); }
+.vitrina-hero__share .share__icon { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.08); }
+.vitrina-hero__share .share__icon:hover { background: rgba(255,255,255,.18); }

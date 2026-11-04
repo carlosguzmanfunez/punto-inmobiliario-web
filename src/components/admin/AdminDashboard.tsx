@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
 import { roleLabel, vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Role, type Seller, type UserRow } from "@/lib/backend";
 import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
-import { formatLempiras, whatsappTo, type PlanKind } from "@/lib/site";
+import { formatLempiras, plural, whatsappTo, type PlanKind } from "@/lib/site";
 import { useAuth, usePlans } from "../AuthProvider";
 import { EditIcon, EyeIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import AdminShell, { type AdminTab } from "./AdminShell";
@@ -221,7 +221,7 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
                       {isLive(p) ? "Publicada" : p.status === "publicada" ? "Vencida" : "Oculta"}
                     </button>
                   )}
-                  {p.ownerId && isLive(p) && <span className="muted small"> {daysLeft(p.paidUntil)} días</span>}
+                  {p.ownerId && isLive(p) && <span className="muted small"> {plural(daysLeft(p.paidUntil), "día", "días")}</span>}
                   <button className={`pill ${p.featured ? "pill--accent pill--btn" : "pill--ghost"}`} title={p.featured ? "Quitar de destacadas" : "Destacar en la portada"}
                     onClick={async () => { await backend.saveProperty({ ...p, featured: !p.featured }); onChange(); }}>{p.featured ? "★ Destacada" : "☆ Destacar"}</button>
                 </td>
@@ -410,7 +410,7 @@ function SellersTab({ sellers, props }: { sellers: Seller[]; props: Property[] }
                     <td className="small nowrap">{s.whatsapp || "—"}</td>
                     <td className="num">{mine.filter((p) => isLive(p)).length}</td>
                     <td className="num">{mine.length}</td>
-                    <td>{vitrinaActive(s) ? <span className="pill pill--static pill--on">{daysLeft(s.vitrinaUntil)} días</span> : <span className="pill pill--static">Inactiva</span>}</td>
+                    <td>{vitrinaActive(s) ? <span className="pill pill--static pill--on">{plural(daysLeft(s.vitrinaUntil), "día", "días")}</span> : <span className="pill pill--static">Inactiva</span>}</td>
                   </tr>
                 );
               })}

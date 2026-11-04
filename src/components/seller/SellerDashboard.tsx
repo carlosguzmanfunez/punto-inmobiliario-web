@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, typeLabel, type Property } from "@/data/properties";
 import { vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Seller } from "@/lib/backend";
 import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
-import { formatLempiras, whatsappTo } from "@/lib/site";
+import { formatLempiras, plural, whatsappTo } from "@/lib/site";
 import { useAuth, usePlans } from "../AuthProvider";
 import AdminShell, { type SellerTab } from "../admin/AdminShell";
 import ReceiptButton from "../ReceiptButton";
@@ -143,8 +143,8 @@ function Listings({ props, inq, payments, onPay, onChange }: { props: Property[]
                   </div>
                   <p className="muted small">{typeLabel[p.type]} · {p.neighborhood}, {p.city} · {formatPrice(p)}</p>
                   <p className="small listing__meta">
-                    <span>{p.views ?? 0} visitas</span><span>{inq.filter((i) => i.propertyId === p.id).length} consultas</span>
-                    {live && <span>Vence el {formatDate(p.paidUntil!)} ({daysLeft(p.paidUntil)} días)</span>}
+                    <span>{p.views ?? 0} {(p.views ?? 0) === 1 ? "visita" : "visitas"}</span><span>{inq.filter((i) => i.propertyId === p.id).length} {inq.filter((i) => i.propertyId === p.id).length === 1 ? "consulta" : "consultas"}</span>
+                    {live && <span>Vence el {formatDate(p.paidUntil!)} ({daysLeft(p.paidUntil)} {daysLeft(p.paidUntil) === 1 ? "día" : "días"})</span>}
                   </p>
                   {live && <ShareBox compact path={`/propiedades/${p.slug}`} title={p.title} message={`Te comparto esta propiedad: ${p.title} (${formatPrice(p)})`} />}
                   <div className="listing__actions">
@@ -240,7 +240,7 @@ function Vitrina({ seller, props, onSaved, onPay }: { seller: Seller | null; pro
           <h2 className="h3">Estado</h2>
           {active ? (
             <>
-              <p><span className="pill pill--static pill--on">Activa</span> hasta el {formatDate(seller!.vitrinaUntil!)} ({daysLeft(seller!.vitrinaUntil)} días).</p>
+              <p><span className="pill pill--static pill--on">Activa</span> hasta el {formatDate(seller!.vitrinaUntil!)} ({plural(daysLeft(seller!.vitrinaUntil), "día", "días")}).</p>
               <p className="muted small">Muestra {liveCount} {liveCount === 1 ? "publicación activa" : "publicaciones activas"}.</p>
               <ShareBox path={`/vendedores/${seller!.slug}`} title={seller!.name} message={`Conoce todos los proyectos de ${seller!.name}`} />
               <button className="btn btn--outline btn--sm" onClick={() => onPay({ vitrina: true })}>Renovar vitrina</button>

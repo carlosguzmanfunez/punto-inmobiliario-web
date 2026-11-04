@@ -145,3 +145,6 @@ export function plansWith(prices: Partial<Record<PlanKind, number>> | undefined)
   for (const k of Object.keys(out) as PlanKind[]) if (prices?.[k] && prices[k]! > 0) out[k] = { ...out[k], price: prices[k]! };
   return out;
 }
+
+// "1 día" / "5 días": número con la palabra en singular o plural.
+export const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
