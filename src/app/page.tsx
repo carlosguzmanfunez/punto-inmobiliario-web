@@ -6,14 +6,6 @@ import { guides } from "@/data/guides";
 import { whatsappLink } from "@/lib/site";
 import { BankIcon, CameraIcon, GlobeIcon, KeyIcon, ShieldIcon, VideoIcon, WhatsAppIcon } from "@/components/Icons";
 
-const quickLinks = [
-  { label: "Casas en Tegucigalpa", href: "/propiedades?tipo=casa&ciudad=Tegucigalpa&depto=Francisco+Moraz%C3%A1n" },
-  { label: "Apartamentos en alquiler", href: "/propiedades?operacion=alquiler&tipo=apartamento" },
-  { label: "San Pedro Sula", href: "/propiedades?ciudad=San+Pedro+Sula&depto=Cort%C3%A9s" },
-  { label: "Frente al mar", href: "/propiedades?am=Frente+al+mar" },
-  { label: "Terrenos", href: "/propiedades?tipo=terreno" },
-];
-
 export default function Home() {
   return (
     <>
@@ -24,10 +16,6 @@ export default function Home() {
           <h1>Encuentra tu lugar en Honduras</h1>
           <p className="hero__sub">Casas, apartamentos, terrenos y locales verificados, con asesoría personal por WhatsApp de principio a fin.</p>
           <HeroSearch />
-          <div className="hero__chips">
-            <span>Populares:</span>
-            {quickLinks.map((c) => <Link key={c.label} href={c.href} className="chip chip--glass">{c.label}</Link>)}
-          </div>
         </div>
       </section>
       <TrustBar />

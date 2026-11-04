@@ -21,10 +21,10 @@ const typeImg: Record<PropertyType, string> = {
 
 // Franja de confianza que flota sobre el final de la portada.
 export function TrustBar() {
-  const items = [
+  const items: { icon: React.ReactNode; label: string; ok?: boolean }[] = [
     { icon: <CheckIcon size={16} />, label: "Propiedades verificadas", ok: true },
-    { icon: <PinIcon size={16} />, label: "Presencia en los 18 departamentos", sub: "del país" },
-    { icon: <GlobeIcon size={16} />, label: "Desde el extranjero", sub: "compra desde EE. UU. o España" },
+    { icon: <PinIcon size={16} />, label: "Presencia en los 18 departamentos de Honduras" },
+    { icon: <GlobeIcon size={16} />, label: "Desde el extranjero, compra desde EE.\u00a0UU. o España" },
     { icon: <KeyIcon size={16} />, label: "Premium para vendedores" },
   ];
   return (
@@ -32,7 +32,7 @@ export function TrustBar() {
       {items.map((i) => (
         <div key={i.label} className="trust-bar__item">
           <span className={`trust-bar__icon${i.ok ? " trust-bar__icon--ok" : ""}`}>{i.icon}</span>
-          <span><strong>{i.label}</strong>{i.sub && <small>{i.sub}</small>}</span>
+          <strong>{i.label}</strong>
         </div>
       ))}
     </div>
