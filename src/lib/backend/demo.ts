@@ -1,6 +1,6 @@
 import { isLive, properties as seedProperties, slugify, type ListingStatus, type Property } from "@/data/properties";
-import { plans } from "@/lib/site";
-import { vitrinaActive, type Backend, type Inquiry, type Payment, type Profile, type SavedSearch, type Seller } from "./types";
+import { defaultSettings, plans, plansWith } from "@/lib/site";
+import { vitrinaActive, type Backend, type Inquiry, type Payment, type Profile, type SavedSearch, type Seller, type Settings } from "./types";
 
 // Modo demo: todo se guarda en localStorage del navegador. Sirve para probar el sitio
 // sin base de datos. Cuentas de prueba: admin@demo.hn / admin123 (administrador),
@@ -10,6 +10,7 @@ type DB = {
   users: DemoUser[]; sellers: Seller[]; properties: Property[]; payments: Payment[];
   favorites: { userId: string; propertyId: string }[]; inquiries: Inquiry[]; session: string | null;
   searches: (SavedSearch & { userId: string })[];
+  settings?: Settings;
 };
 
 const KEY = "pihn-demo-v3";
@@ -36,9 +37,9 @@ function seed(): DB {
   };
   const p = seedProperties.map((x) => ({ ...x }));
   // Dos propiedades del vendedor de prueba, con su plan vigente.
-  for (const slug of ["apartamento-torre-sps", "terreno-carretera-santa-lucia"]) {
+  for (const [slug, days] of [["apartamento-torre-sps", 18], ["terreno-carretera-santa-lucia", 5]] as const) {
     const x = p.find((y) => y.slug === slug)!;
-    x.ownerId = seller.id; x.status = "publicada"; x.paidUntil = plusDays(null, 18);
+    x.ownerId = seller.id; x.status = "publicada"; x.paidUntil = plusDays(null, days);
   }
   const draft: Property = {
     id: "torre-alameda-pendiente", slug: "torre-alameda-apartamentos-preventa", title: "Torre Alameda: apartamentos en preventa",
@@ -55,7 +56,9 @@ function seed(): DB {
     properties: p,
     payments: [
       { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: draft.id, amount: plans.publicacion.price, reference: "Transferencia BAC #448812", status: "pendiente", createdAt: now(), confirmedAt: null },
-      { id: uid(), sellerId: seller.id, kind: "vitrina", propertyId: null, amount: plans.vitrina.price, reference: "Depósito Atlántida 10/24", status: "pagado", createdAt: "2026-10-24T16:00:00.000Z", confirmedAt: "2026-10-24T18:00:00.000Z" },
+      { id: uid(), sellerId: seller.id, kind: "vitrina", propertyId: null, amount: plans.vitrina.price, reference: "Depósito Atlántida", status: "pagado", createdAt: new Date(Date.now() - 9 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 9 * DAY).toISOString() },
+      { id: uid(), sellerId: seller.id, kind: "destacada", propertyId: "apartamento-torre-sps", amount: plans.destacada.price, reference: "Transferencia BAC #440219", status: "pagado", createdAt: new Date(Date.now() - 12 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 12 * DAY).toISOString() },
+      { id: uid(), sellerId: seller.id, kind: "publicacion", propertyId: "terreno-carretera-santa-lucia", amount: plans.publicacion.price, reference: "Depósito Ficohsa", status: "pagado", createdAt: new Date(Date.now() - 25 * DAY).toISOString(), confirmedAt: new Date(Date.now() - 25 * DAY).toISOString() },
     ],
     favorites: [{ userId: maria.id, propertyId: p[5].id }, { userId: maria.id, propertyId: p[0].id }],
     inquiries: [
@@ -64,6 +67,7 @@ function seed(): DB {
       { id: uid(), propertyId: p[2].id, userId: null, name: "Ana Reyes", email: "ana.reyes@ejemplo.com", phone: "+504 3311-2244", message: "¿Aceptan financiamiento con BAC? Quisiera visitarla.", status: "cerrada", createdAt: "2026-10-28T09:45:00.000Z" },
       { id: uid(), propertyId: p[4].id, userId: null, name: "Luis Paredes", email: "luis.p@ejemplo.com", phone: "+504 9512-3344", message: "¿El apartamento tiene vista al Merendón desde la sala? Me interesa para inversión.", status: "nueva", createdAt: "2026-11-03T11:05:00.000Z" },
     ],
+    settings: { ...defaultSettings, bankInfo: "BAC Credomatic · Cuenta de ahorro en lempiras 7300-0000-00 · A nombre de Punto Inmobiliario Hn (datos de prueba)" },
     searches: [
       { id: uid(), userId: maria.id, name: "Casas en venta en Tegucigalpa", query: "operacion=venta&tipo=casa&ciudad=Tegucigalpa", createdAt: "2026-11-01T10:00:00.000Z" },
     ],
@@ -75,7 +79,7 @@ function load(): DB {
   if (typeof window === "undefined") return seed();
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) { const db = JSON.parse(raw); db.searches ??= []; return db; }
+    if (raw) { const db = JSON.parse(raw); db.searches ??= []; db.settings ??= { ...defaultSettings }; return db; }
   } catch {}
   const db = seed();
   save(db);
@@ -250,6 +254,12 @@ export function createDemoBackend(): Backend {
       save(db); return delay({ ...s });
     },
     async listSellers() { const db = load(); requireAdmin(db); return delay([...db.sellers].sort((a, b) => b.createdAt.localeCompare(a.createdAt))); },
+    async getSettings() { return delay({ ...defaultSettings, ...load().settings }); },
+    async saveSettings(st) {
+      const db = load(); requireAdmin(db);
+      if (!(st.usdRate > 0)) throw new Error("El tipo de cambio debe ser mayor que cero.");
+      db.settings = st; save(db); emit();
+    },
     async listVitrinas() { return delay(load().sellers.filter((s) => vitrinaActive(s))); },
 
     async listSavedSearches() {
@@ -275,7 +285,7 @@ export function createDemoBackend(): Backend {
         if (!p || (p.ownerId !== u.id && u.role !== "admin")) throw new Error("No encontramos esa publicación.");
         if (p.status !== "publicada") p.status = "pendiente";
       }
-      db.payments.push({ id: uid(), sellerId: u.id, kind, propertyId, amount: plans[kind].price, reference: reference.trim(), status: "pendiente", createdAt: now(), confirmedAt: null });
+      db.payments.push({ id: uid(), sellerId: u.id, kind, propertyId, amount: plansWith(db.settings?.prices)[kind].price, reference: reference.trim(), status: "pendiente", createdAt: now(), confirmedAt: null });
       save(db); await delay(null);
     },
     async listMyPayments() { const db = load(); const u = requireUser(db); return delay(withPaymentNames(db, db.payments.filter((x) => x.sellerId === u.id))); },

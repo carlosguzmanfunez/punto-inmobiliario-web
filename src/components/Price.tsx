@@ -2,14 +2,16 @@
 import type { Property } from "@/data/properties";
 import { altPrice, displayPrice } from "@/lib/money";
 import { usePrefs } from "./PrefsProvider";
+import { useAuth } from "./AuthProvider";
 
 // Precio en la moneda que eligió el visitante (selector del encabezado).
 export default function Price({ p, alt = false, className }: { p: Pick<Property, "price" | "currency" | "operation">; alt?: boolean; className?: string }) {
   const { currency } = usePrefs();
+  const rate = useAuth().settings.usdRate;
   return (
     <span className={className}>
-      {displayPrice(p, currency)}
-      {alt && <small className="price-alt">{altPrice(p, currency)}</small>}
+      {displayPrice(p, currency, rate)}
+      {alt && <small className="price-alt">{altPrice(p, currency, rate)}</small>}
     </span>
   );
 }

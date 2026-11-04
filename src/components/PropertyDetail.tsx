@@ -20,7 +20,7 @@ import { useProperties } from "./useProperties";
 import { AreaIcon, BathIcon, BedIcon, CarIcon, CheckIcon, GlobeIcon, MapIcon, PinIcon, PrintIcon, WhatsAppIcon } from "./Icons";
 
 export default function PropertyDetail({ slug }: { slug: string }) {
-  const { backend, profile } = useAuth();
+  const { backend, profile, settings } = useAuth();
   const { list } = useProperties();
   const [p, setP] = useState<Property | null | undefined>(undefined);
   const [seller, setSeller] = useState<Seller | null>(null);
@@ -69,7 +69,7 @@ export default function PropertyDetail({ slug }: { slug: string }) {
     ["Tipo", typeLabel[p.type]],
     ["Operación", p.operation === "venta" ? "Venta" : "Alquiler"],
     ["Precio", `${formatMoney(p.price, p.currency)}${p.operation === "alquiler" ? " /mes" : ""}`],
-    [p.currency === "USD" ? "Equivale a" : "En dólares", `${formatMoney(priceIn(p, p.currency === "USD" ? "HNL" : "USD"), p.currency === "USD" ? "HNL" : "USD")} aprox.`],
+    [p.currency === "USD" ? "Equivale a" : "En dólares", `${formatMoney(priceIn(p, p.currency === "USD" ? "HNL" : "USD", settings.usdRate), p.currency === "USD" ? "HNL" : "USD")} aprox.`],
     ...(p.bedrooms ? [["Habitaciones", String(p.bedrooms)] as [string, string]] : []),
     ...(p.bathrooms ? [["Baños", String(p.bathrooms)] as [string, string]] : []),
     ...(p.parking ? [["Parqueos", String(p.parking)] as [string, string]] : []),

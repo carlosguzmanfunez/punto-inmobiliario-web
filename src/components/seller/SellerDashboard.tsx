@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, typeLabel, type Property } from "@/data/properties";
 import { vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Seller } from "@/lib/backend";
 import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
-import { formatLempiras, plans, whatsappTo } from "@/lib/site";
-import { useAuth } from "../AuthProvider";
+import { formatLempiras, whatsappTo } from "@/lib/site";
+import { useAuth, usePlans } from "../AuthProvider";
 import AdminShell, { type SellerTab } from "../admin/AdminShell";
 import { EditIcon, EyeIcon, ImageIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import ShareBox from "../ShareBox";
@@ -201,6 +201,7 @@ function Inquiries({ inq, onChange }: { inq: Inquiry[]; onChange: () => void }) 
 }
 
 function Vitrina({ seller, props, onSaved, onPay }: { seller: Seller | null; props: Property[]; onSaved: (s: Seller) => void; onPay: (p: Paying) => void }) {
+  const plans = usePlans();
   const { backend, profile } = useAuth();
   const [f, setF] = useState({ name: seller?.name ?? profile?.fullName ?? "", slug: seller?.slug ?? "", city: seller?.city ?? "", whatsapp: seller?.whatsapp ?? profile?.phone ?? "", bio: seller?.bio ?? "", logo: seller?.logo ?? "" });
   const [busy, setBusy] = useState(false);
@@ -257,6 +258,7 @@ function Vitrina({ seller, props, onSaved, onPay }: { seller: Seller | null; pro
 }
 
 function Plans({ payments }: { payments: Payment[] }) {
+  const plans = usePlans();
   return (
     <>
       <div className="admin__title"><h1 className="h2">Planes y pagos</h1></div>

@@ -129,3 +129,17 @@ export function whatsappTo(phone: string, message: string) {
   const digits = phone.replace(/\D/g, "");
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
+
+// Valores iniciales de los ajustes (el administrador los cambia en /admin?tab=ajustes).
+export const defaultSettings = {
+  usdRate: site.usdRate,
+  prices: { publicacion: plans.publicacion.price, destacada: plans.destacada.price, vitrina: plans.vitrina.price } as Record<PlanKind, number>,
+  bankInfo: "",
+};
+
+// Planes con los precios vigentes de los ajustes.
+export function plansWith(prices: Partial<Record<PlanKind, number>> | undefined): Record<PlanKind, Plan> {
+  const out = { ...plans };
+  for (const k of Object.keys(out) as PlanKind[]) if (prices?.[k] && prices[k]! > 0) out[k] = { ...out[k], price: prices[k]! };
+  return out;
+}

@@ -188,6 +188,18 @@ begin
 end $$;
 grant execute on function public.record_view(uuid) to anon, authenticated;
 
+-- ---------- Ajustes del negocio (precios de planes, tipo de cambio, datos bancarios) ----------
+create table if not exists public.settings (
+  id int primary key default 1 check (id = 1),
+  data jsonb not null default '{}'
+);
+insert into public.settings (id, data) values (1, '{"usdRate": 26.3, "prices": {"publicacion": 590, "destacada": 990, "vitrina": 2490}, "bankInfo": ""}')
+  on conflict (id) do nothing;
+alter table public.settings enable row level security;
+create policy "ajustes públicos" on public.settings for select using (true);
+create policy "admin edita ajustes" on public.settings for update using (public.is_admin());
+create policy "admin crea ajustes" on public.settings for insert with check (public.is_admin());
+
 -- ---------- Pagos de planes ----------
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
@@ -206,6 +218,17 @@ create policy "vendedor solicita pago" on public.payments for insert with check 
   seller_id = auth.uid() and status = 'pendiente' and confirmed_at is null
   and (property_id is null or exists (select 1 from public.properties p where p.id = property_id and p.owner_id = auth.uid()))
 );
+
+-- El monto lo pone la base de datos según los precios vigentes, nunca el navegador.
+create or replace function public.payment_amount()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  select coalesce((data->'prices'->>new.kind)::numeric, 0) into new.amount from public.settings where id = 1;
+  return new;
+end $$;
+drop trigger if exists payments_amount on public.payments;
+create trigger payments_amount before insert on public.payments
+  for each row execute function public.payment_amount();
 
 -- Al pedir el pago, la publicación pasa a "pendiente".
 create or replace function public.payment_requested()

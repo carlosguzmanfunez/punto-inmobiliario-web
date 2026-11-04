@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { slugify, type Property } from "@/data/properties";
-import { plans } from "@/lib/site";
+import { defaultSettings } from "@/lib/site";
 import type { Backend, Inquiry, Payment, Profile, Role, Seller } from "./types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -154,6 +154,13 @@ export function createSupabaseBackend(url: string, key: string): Backend {
       const { data, error } = await sb.from("sellers").select("*").order("created_at", { ascending: false }); fail(error);
       return (data ?? []).map(toSeller);
     },
+    async getSettings() {
+      const { data } = await sb.from("settings").select("data").eq("id", 1).maybeSingle();
+      return { ...defaultSettings, ...(data?.data ?? {}), prices: { ...defaultSettings.prices, ...(data?.data?.prices ?? {}) } };
+    },
+    async saveSettings(st) {
+      const { error } = await sb.from("settings").upsert({ id: 1, data: st }); fail(error);
+    },
     async listVitrinas() {
       const { data, error } = await sb.from("sellers").select("*").gte("vitrina_until", new Date().toISOString()).order("name"); fail(error);
       return (data ?? []).map(toSeller);
@@ -174,7 +181,7 @@ export function createSupabaseBackend(url: string, key: string): Backend {
 
     async requestPayment({ kind, propertyId, reference }) {
       const id = await uid(); if (!id) throw new Error("Debes iniciar sesión.");
-      const { error } = await sb.from("payments").insert({ seller_id: id, kind, property_id: propertyId, amount: plans[kind].price, reference: reference.trim() });
+      const { error } = await sb.from("payments").insert({ seller_id: id, kind, property_id: propertyId, amount: 0, reference: reference.trim() });
       fail(error);
     },
     async listMyPayments() {

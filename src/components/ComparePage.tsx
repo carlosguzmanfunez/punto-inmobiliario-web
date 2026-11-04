@@ -6,10 +6,11 @@ import { formatMoney, priceIn } from "@/lib/money";
 import { whatsappLink } from "@/lib/site";
 import { usePrefs } from "./PrefsProvider";
 import { useProperties } from "./useProperties";
+import { useAuth } from "./AuthProvider";
 import Price from "./Price";
 import { CloseIcon, WhatsAppIcon } from "./Icons";
 
-const rows: [string, (p: Property) => string][] = [
+const rows: [string, (p: Property, rate: number) => string][] = [
   ["Código", (p) => propertyCode(p)],
   ["Tipo", (p) => typeLabel[p.type]],
   ["Operación", (p) => (p.operation === "venta" ? "Venta" : "Alquiler")],
@@ -20,12 +21,13 @@ const rows: [string, (p: Property) => string][] = [
   ["Parqueos", (p) => (p.parking ? String(p.parking) : "—")],
   ["Construcción", (p) => (p.areaM2 ? `${p.areaM2.toLocaleString("es-HN")} m²` : "—")],
   ["Terreno", (p) => (p.lotM2 ? `${p.lotM2.toLocaleString("es-HN")} m²` : "—")],
-  ["Precio por m²", (p) => { const a = p.areaM2 || p.lotM2 || 0; return p.operation === "venta" && a ? formatMoney(priceIn(p, "HNL") / a, "HNL") : "—"; }],
+  ["Precio por m²", (p, rate) => { const a = p.areaM2 || p.lotM2 || 0; return p.operation === "venta" && a ? formatMoney(priceIn(p, "HNL", rate) / a, "HNL") : "—"; }],
 ];
 
 export default function ComparePage() {
   const { compare, toggleCompare, clearCompare } = usePrefs();
   const { list } = useProperties();
+  const rate = useAuth().settings.usdRate;
   const items = compare.map((id) => list?.find((p) => p.id === id)).filter((p): p is Property => !!p);
   const allFeatures = Array.from(new Set(items.flatMap((p) => p.features)));
 
@@ -57,7 +59,7 @@ export default function ComparePage() {
             </thead>
             <tbody>
               {rows.map(([label, f]) => (
-                <tr key={label}><th scope="row">{label}</th>{items.map((p) => <td key={p.id}>{f(p)}</td>)}</tr>
+                <tr key={label}><th scope="row">{label}</th>{items.map((p) => <td key={p.id}>{f(p, rate)}</td>)}</tr>
               ))}
               {allFeatures.map((feat) => (
                 <tr key={feat}><th scope="row">{feat}</th>{items.map((p) => <td key={p.id}>{p.features.includes(feat) ? "✓" : "—"}</td>)}</tr>

@@ -68,6 +68,9 @@ export type Payment = {
   confirmedAt: string | null;
 };
 
+// Ajustes del negocio que el administrador cambia desde su panel.
+export type Settings = { usdRate: number; prices: Record<PlanKind, number>; bankInfo: string };
+
 // Búsqueda guardada por un comprador: el texto de la URL de /propiedades.
 export type SavedSearch = { id: string; name: string; query: string; createdAt: string };
 
@@ -112,6 +115,9 @@ export interface Backend {
   listPayments(): Promise<Payment[]>;
   confirmPayment(id: string): Promise<void>;
   rejectPayment(id: string): Promise<void>;
+
+  getSettings(): Promise<Settings>;
+  saveSettings(s: Settings): Promise<void>;
 
   listSavedSearches(): Promise<SavedSearch[]>;
   saveSearch(d: { name: string; query: string }): Promise<void>;

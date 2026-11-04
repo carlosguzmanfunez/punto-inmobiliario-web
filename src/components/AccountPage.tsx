@@ -4,16 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Inquiry, SavedSearch } from "@/lib/backend";
 import { formatDate, statusLabel } from "@/lib/labels";
-import { useAuth } from "./AuthProvider";
+import { useAuth, usePlans } from "./AuthProvider";
 import PropertyCard from "./PropertyCard";
 import { useProperties } from "./useProperties";
 import { BellIcon, HeartIcon, InboxIcon, KeyIcon, LogoutIcon, TrashIcon, UserIcon } from "./Icons";
 import { searchTitle } from "./PropertyBrowser";
-import { formatLempiras, plans } from "@/lib/site";
+import { formatLempiras } from "@/lib/site";
 
 type Tab = "favoritos" | "busquedas" | "consultas" | "perfil" | "vender";
 
 export default function AccountPage() {
+  const plans = usePlans();
   const { backend, profile, loading, favorites, refresh } = useAuth();
   const router = useRouter();
   const sp = useSearchParams();

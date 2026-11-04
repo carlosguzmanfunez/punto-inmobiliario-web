@@ -2,14 +2,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Seller } from "@/lib/backend";
-import { formatLempiras, plans, whatsappTo } from "@/lib/site";
-import { useAuth } from "./AuthProvider";
+import { formatLempiras, whatsappTo } from "@/lib/site";
+import { useAuth, usePlans } from "./AuthProvider";
 import { useProperties } from "./useProperties";
 import PropertyCard from "./PropertyCard";
 import { BuildingIcon, CheckIcon, WhatsAppIcon } from "./Icons";
 
 // Directorio público de vendedores con vitrina vigente y sus propiedades.
 export default function ProjectsPage() {
+  const plans = usePlans();
   const { backend } = useAuth();
   const { list } = useProperties();
   const [sellers, setSellers] = useState<Seller[] | null>(null);

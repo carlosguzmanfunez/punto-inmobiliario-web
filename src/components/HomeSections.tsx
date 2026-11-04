@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { typeLabel, typePlural, type PropertyType } from "@/data/properties";
 import { allCities, featuredCities } from "@/data/geo";
 import type { Seller } from "@/lib/backend";
-import { formatLempiras, plans, whatsappLink } from "@/lib/site";
-import { useAuth } from "./AuthProvider";
+import { formatLempiras, whatsappLink } from "@/lib/site";
+import { useAuth, usePlans } from "./AuthProvider";
 import { useProperties } from "./useProperties";
 import { BuildingIcon, CheckIcon, HomeIcon, StoreIcon, WhatsAppIcon } from "./Icons";
 
@@ -59,6 +59,7 @@ export function CityExplorer() {
 }
 
 export function ProjectsBlock() {
+  const plans = usePlans();
   const { backend } = useAuth();
   const { list } = useProperties();
   const [sellers, setSellers] = useState<Seller[] | null>(null);
@@ -130,6 +131,7 @@ export function PublishLead() {
 }
 
 export function PublishSteps() {
+  const plans = usePlans();
   return (
     <ol className="publish-steps">
       <li><span className="steps__n">1</span><div><strong>Crea tu cuenta de vendedor</strong><p className="muted small">Gratis, en un minuto. O déjanos tus datos y un asesor lo hace contigo.</p></div></li>

@@ -43,7 +43,8 @@ export default function PropertyBrowser() {
   const sp = useSearchParams();
   const router = useRouter();
   const { list } = useProperties();
-  const { backend, profile } = useAuth();
+  const { backend, profile, settings } = useAuth();
+  const rate = settings.usdRate;
   const [open, setOpen] = useState(false);
   const [more, setMore] = useState(false);
   const [saveMsg, setSaveMsg] = useState("");
@@ -66,7 +67,7 @@ export default function PropertyBrowser() {
 
   const results = useMemo(() => {
     const r = (list ?? []).filter((p) => {
-      const hnl = priceIn(p, "HNL");
+      const hnl = priceIn(p, "HNL", rate);
       const feats = p.features.map(norm);
       return (!operacion || p.operation === operacion) &&
         (!tipo || p.type === tipo) &&
@@ -80,12 +81,12 @@ export default function PropertyBrowser() {
     });
     const by: Record<string, (a: Property, b: Property) => number> = {
       recientes: (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""),
-      "precio-asc": (a, b) => priceIn(a, "HNL") - priceIn(b, "HNL"),
-      "precio-desc": (a, b) => priceIn(b, "HNL") - priceIn(a, "HNL"),
+      "precio-asc": (a, b) => priceIn(a, "HNL", rate) - priceIn(b, "HNL", rate),
+      "precio-desc": (a, b) => priceIn(b, "HNL", rate) - priceIn(a, "HNL", rate),
       area: (a, b) => (b.areaM2 || b.lotM2 || 0) - (a.areaM2 || a.lotM2 || 0),
     };
     return by[orden] ? [...r].sort(by[orden]) : r;
-  }, [list, operacion, tipo, depto, ciudad, hab, banos, pmin, pmax, am.join(","), q, orden]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [list, operacion, tipo, depto, ciudad, hab, banos, pmin, pmax, am.join(","), q, orden, rate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pages = Math.max(1, Math.ceil(results.length / PER_PAGE));
   const current = Math.min(page, pages);

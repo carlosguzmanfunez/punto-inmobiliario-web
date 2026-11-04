@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { getBackend, type Backend, type Profile } from "@/lib/backend";
+import { getBackend, type Backend, type Profile, type Settings } from "@/lib/backend";
+import { defaultSettings, plansWith, type Plan, type PlanKind } from "@/lib/site";
 import { PrefsProvider } from "./PrefsProvider";
 
 type Ctx = {
@@ -10,6 +11,10 @@ type Ctx = {
   favorites: Set<string>;
   toggleFavorite: (propertyId: string) => Promise<"added" | "removed" | "login">;
   refresh: () => Promise<void>;
+  // Ajustes vigentes: precios de planes, tipo de cambio y datos bancarios.
+  settings: Settings;
+  plans: Record<PlanKind, Plan>;
+  reloadSettings: () => Promise<void>;
 };
 
 const AuthContext = createContext<Ctx | null>(null);
@@ -19,6 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
+  const reloadSettings = useCallback(async () => { try { setSettings(await backend.getSettings()); } catch {} }, [backend]);
+  useEffect(() => { reloadSettings(); }, [reloadSettings]);
 
   const refresh = useCallback(async () => {
     try {
@@ -44,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return added ? ("added" as const) : ("removed" as const);
   }, [backend, profile]);
 
-  return <AuthContext.Provider value={{ backend, profile, loading, favorites, toggleFavorite, refresh }}><PrefsProvider>{children}</PrefsProvider></AuthContext.Provider>;
+  return <AuthContext.Provider value={{ backend, profile, loading, favorites, toggleFavorite, refresh, settings, plans: plansWith(settings.prices), reloadSettings }}><PrefsProvider>{children}</PrefsProvider></AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -52,3 +60,6 @@ export function useAuth() {
   if (!c) throw new Error("useAuth debe usarse dentro de AuthProvider");
   return c;
 }
+
+// Planes con los precios que fijó el administrador.
+export function usePlans() { return useAuth().plans; }

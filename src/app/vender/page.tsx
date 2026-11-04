@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { formatLempiras, plans, whatsappLink } from "@/lib/site";
-import { CheckIcon, LinkIcon, StoreIcon, WhatsAppIcon } from "@/components/Icons";
+import { plans, whatsappLink } from "@/lib/site";
+import PlansGrid from "@/components/PlansGrid";
+import { WhatsAppIcon } from "@/components/Icons";
 
 export const metadata = { title: "Vende o alquila tu propiedad" };
 
@@ -42,19 +43,7 @@ export default function SellPage() {
         <div className="container">
           <h2 className="center">Planes</h2>
           <p className="muted center">Precios en lempiras por {plans.publicacion.days} días. Sin contratos ni comisiones por venta.</p>
-          <div className="plans">
-            {Object.values(plans).map((p) => (
-              <div key={p.kind} id={p.kind === "vitrina" ? "vitrina" : undefined} className={`plan${p.kind === "destacada" ? " plan--featured" : ""}`}>
-                {p.kind === "destacada" && <span className="plan__tag">Más visto</span>}
-                <span className="plan__icon">{p.kind === "vitrina" ? <StoreIcon size={24} /> : <LinkIcon size={24} />}</span>
-                <h3>{p.name}</h3>
-                <p className="plan-price">{formatLempiras(p.price)} <small>{p.kind === "vitrina" ? "al mes" : "por propiedad"}</small></p>
-                <p className="muted">{p.summary}</p>
-                <ul className="plan__perks">{p.perks.map((x) => <li key={x}><CheckIcon size={16} /> {x}</li>)}</ul>
-                <Link className={`btn btn--block ${p.kind === "destacada" ? "btn--primary" : "btn--outline"}`} href={signup}>Empezar</Link>
-              </div>
-            ))}
-          </div>
+          <PlansGrid signup={signup} />
         </div>
       </section>
 

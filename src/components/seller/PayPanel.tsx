@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import type { Property } from "@/data/properties";
-import { formatLempiras, plans, whatsappLink, type PlanKind } from "@/lib/site";
-import { useAuth } from "../AuthProvider";
+import { formatLempiras, whatsappLink, type PlanKind } from "@/lib/site";
+import { useAuth, usePlans } from "../AuthProvider";
 import { CloseIcon, WhatsAppIcon } from "../Icons";
 
 // Solicitud de pago de un plan. El pago se hace por transferencia o depósito; el vendedor
@@ -10,7 +10,8 @@ import { CloseIcon, WhatsAppIcon } from "../Icons";
 export default function PayPanel({ property, vitrina, onDone, onClose }: {
   property?: Property | null; vitrina?: boolean; onDone: () => void; onClose: () => void;
 }) {
-  const { backend, profile } = useAuth();
+  const { backend, profile, settings } = useAuth();
+  const plans = usePlans();
   const options: PlanKind[] = vitrina ? ["vitrina"] : ["publicacion", "destacada"];
   const [kind, setKind] = useState<PlanKind>(options[0]);
   const [reference, setReference] = useState("");
@@ -38,9 +39,16 @@ export default function PayPanel({ property, vitrina, onDone, onClose }: {
         ))}
       </div>
       <ol className="pay__steps">
-        <li>Pide los datos bancarios y paga por transferencia o depósito.
-          <a className="btn btn--wa btn--sm" href={whatsappLink(ask)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={16} /> Pedir datos de pago</a>
-        </li>
+        {settings.bankInfo ? (
+          <li>Transfiere o deposita {formatLempiras(plan.price)} a esta cuenta:
+            <span className="bank-info">{settings.bankInfo}</span>
+            <a className="btn btn--wa btn--sm" href={whatsappLink(ask)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={16} /> ¿Dudas? Escríbenos</a>
+          </li>
+        ) : (
+          <li>Pide los datos bancarios y paga por transferencia o depósito.
+            <a className="btn btn--wa btn--sm" href={whatsappLink(ask)} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={16} /> Pedir datos de pago</a>
+          </li>
+        )}
         <li>Escribe el número de referencia de tu pago y envíalo. Activamos tu {vitrina ? "vitrina" : "publicación"} en cuanto lo confirmemos.</li>
       </ol>
       <form className="form" onSubmit={async (e) => {

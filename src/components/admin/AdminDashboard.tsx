@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
 import { roleLabel, vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Role, type Seller, type UserRow } from "@/lib/backend";
 import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
-import { formatLempiras, plans } from "@/lib/site";
-import { useAuth } from "../AuthProvider";
+import { formatLempiras, whatsappTo, type PlanKind } from "@/lib/site";
+import { useAuth, usePlans } from "../AuthProvider";
 import { EditIcon, EyeIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import AdminShell, { type AdminTab } from "./AdminShell";
 
@@ -40,12 +40,13 @@ export default function AdminDashboard() {
       {error && <p className="form__error">{error}</p>}
       {!props || !inq || !users ? <p className="muted">Cargando datos…</p> : (
         <>
-          {tab === "resumen" && <Summary props={props} inq={inq} users={users} payments={payments} />}
+          {tab === "resumen" && <Summary props={props} inq={inq} users={users} payments={payments} sellers={sellers} />}
           {tab === "propiedades" && <PropertiesTab props={props} inq={inq} sellers={sellers} onChange={load} />}
           {tab === "pagos" && <PaymentsTab payments={payments} onChange={load} />}
           {tab === "vendedores" && <SellersTab sellers={sellers} props={props} />}
           {tab === "consultas" && <InquiriesTab inq={inq} onChange={load} />}
           {tab === "usuarios" && <UsersTab users={users} meId={profile?.id ?? ""} onChange={load} />}
+          {tab === "ajustes" && <SettingsTab />}
         </>
       )}
     </AdminShell>
@@ -57,9 +58,10 @@ function Stat({ label, value, hint, href }: { label: string; value: string | num
   return href ? <Link href={href} className="stat">{body}</Link> : <div className="stat">{body}</div>;
 }
 
-function Summary({ props, inq, users, payments }: { props: Property[]; inq: Inquiry[]; users: UserRow[]; payments: Payment[] }) {
+function Summary({ props, inq, users, payments, sellers }: { props: Property[]; inq: Inquiry[]; users: UserRow[]; payments: Payment[]; sellers: Seller[] }) {
+  const plans = usePlans();
   const published = props.filter((p) => isLive(p));
-  const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
+  const month = new Date(Date.now() - 30 * 864e5); // ingresos de los últimos 30 días
   const income = payments.filter((x) => x.status === "pagado" && x.confirmedAt && new Date(x.confirmedAt) >= month).reduce((s, x) => s + x.amount, 0);
   const toConfirm = payments.filter((x) => x.status === "pendiente").length;
   const views = props.reduce((s, p) => s + (p.views ?? 0), 0);
@@ -75,6 +77,16 @@ function Summary({ props, inq, users, payments }: { props: Property[]; inq: Inqu
   }), [inq]);
   const maxDay = Math.max(1, ...days.map((x) => x.n));
 
+  // Renovaciones: publicaciones y vitrinas que vencen en los próximos 7 días.
+  const soon = Date.now() + 7 * 864e5;
+  const expiring = [
+    ...props.filter((p) => p.ownerId && isLive(p) && p.paidUntil && new Date(p.paidUntil).getTime() < soon)
+      .map((p) => ({ id: p.id, what: p.title, until: p.paidUntil!, seller: sellers.find((x) => x.id === p.ownerId) })),
+    ...sellers.filter((x) => vitrinaActive(x) && new Date(x.vitrinaUntil!).getTime() < soon).map((x) => ({ id: "v" + x.id, what: "Vitrina", until: x.vitrinaUntil!, seller: x })),
+  ].sort((a, b) => a.until.localeCompare(b.until));
+  const byPlan = (Object.keys(plans) as PlanKind[]).map((k) => ({ k, n: payments.filter((x) => x.kind === k && x.status === "pagado" && x.confirmedAt && new Date(x.confirmedAt) >= month).reduce((s2, x) => s2 + x.amount, 0) }));
+  const maxPlan = Math.max(1, ...byPlan.map((x) => x.n));
+
   const top = [...published].sort((a, b) => (b.views ?? 0) - (a.views ?? 0)).slice(0, 5);
   const maxViews = Math.max(1, ...top.map((p) => p.views ?? 0));
   const byCity = Object.entries(published.reduce<Record<string, number>>((m, p) => ({ ...m, [p.city]: (m[p.city] ?? 0) + 1 }), {})).sort((a, b) => b[1] - a[1]);
@@ -87,7 +99,7 @@ function Summary({ props, inq, users, payments }: { props: Property[]; inq: Inqu
         <Stat label="Consultas nuevas" value={nuevas} hint={`${inq.length} en total`} href="/admin?tab=consultas" />
         <Stat label="Visitas a propiedades" value={views.toLocaleString("es-HN")} hint="desde que se publicaron" />
         <Stat label="Usuarios registrados" value={users.length} hint={`${newUsers} en los últimos 30 días`} href="/admin?tab=usuarios" />
-        <Stat label="Ingresos del mes" value={formatLempiras(income)} hint={`${toConfirm} pagos por confirmar`} href="/admin?tab=pagos" />
+        <Stat label="Ingresos (30 días)" value={formatLempiras(income)} hint={`${toConfirm} pagos por confirmar`} href="/admin?tab=pagos" />
       </div>
       <div className="panels">
         <div className="panel">
@@ -123,6 +135,28 @@ function Summary({ props, inq, users, payments }: { props: Property[]; inq: Inqu
           </ul>
         </div>
         <div className="panel">
+          <h2 className="h3">Por renovar esta semana</h2>
+          {expiring.length === 0 ? <p className="muted small">Ningún plan vence en los próximos 7 días.</p> : (
+            <ul className="mini-list">
+              {expiring.map((e) => (
+                <li key={e.id} className="renew">
+                  <div><strong>{e.seller?.name ?? "Vendedor"}</strong><br /><span className="muted small">{e.what} · vence en {daysLeft(e.until)} {daysLeft(e.until) === 1 ? "día" : "días"}</span></div>
+                  {e.seller?.whatsapp && <a className="btn btn--wa btn--sm" target="_blank" rel="noopener noreferrer" href={whatsappTo(e.seller.whatsapp, `Hola ${e.seller.name}, le escribe Punto Inmobiliario Hn. Su plan de "${e.what}" vence en ${daysLeft(e.until)} días. ¿Desea renovarlo para seguir visible?`)}><WhatsAppIcon size={14} /> Avisar</a>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div className="panel">
+          <h2 className="h3">Ingresos por plan (30 días)</h2>
+          <ul className="hbars">
+            {byPlan.map(({ k, n }) => (
+              <li key={k}><span className="hbars__label">{{ publicacion: "Publicación", destacada: "Destacada", vitrina: "Vitrina" }[k]}</span><span className="hbars__track"><span style={{ width: `${(n / maxPlan) * 100}%` }} /></span><span className="hbars__n hbars__n--wide">{formatLempiras(n)}</span></li>
+            ))}
+          </ul>
+          <Link href="/admin?tab=ajustes" className="link-arrow small">Cambiar precios →</Link>
+        </div>
+        <div className="panel">
           <h2 className="h3">Últimas consultas</h2>
           <ul className="mini-list">
             {inq.slice(0, 4).map((i) => (
@@ -140,13 +174,26 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
   const { backend } = useAuth();
   const [q, setQ] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const shown = props.filter((p) => `${p.title} ${p.city} ${p.neighborhood}`.toLowerCase().includes(q.toLowerCase()));
+  const [st, setSt] = useState("");
+  const groups: [string, string, (p: Property) => boolean][] = [
+    ["", "Todas", () => true],
+    ["live", "Publicadas", (p) => isLive(p)],
+    ["pendiente", "Por aprobar", (p) => p.status === "pendiente"],
+    ["vencida", "Vencidas", (p) => !!p.ownerId && p.status === "publicada" && !isLive(p)],
+    ["oculta", "Ocultas o borrador", (p) => !isLive(p) && p.status !== "pendiente" && !(p.ownerId && p.status === "publicada")],
+    ["destacada", "Destacadas", (p) => !!p.featured],
+  ];
+  const match = groups.find((g) => g[0] === st)![2];
+  const shown = props.filter((p) => match(p) && `${p.title} ${p.city} ${p.neighborhood}`.toLowerCase().includes(q.toLowerCase()));
 
   return (
     <>
       <div className="admin__title">
         <h1 className="h2">Propiedades <span className="muted">({props.length})</span></h1>
         <Link className="btn btn--primary" href="/admin/propiedad"><PlusIcon size={18} /> Nueva propiedad</Link>
+      </div>
+      <div className="seg">
+        {groups.map(([k, label, f]) => <button key={k} className={st === k ? "is-active" : ""} onClick={() => setSt(k)}>{label} <span className="count">{props.filter(f).length}</span></button>)}
       </div>
       <input className="admin__search" type="search" placeholder="Buscar por título, ciudad o colonia" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="table-wrap">
@@ -173,7 +220,8 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
                     </button>
                   )}
                   {p.ownerId && isLive(p) && <span className="muted small"> {daysLeft(p.paidUntil)} días</span>}
-                  {p.featured && <span className="pill pill--accent">Destacada</span>}
+                  <button className={`pill ${p.featured ? "pill--accent pill--btn" : "pill--ghost"}`} title={p.featured ? "Quitar de destacadas" : "Destacar en la portada"}
+                    onClick={async () => { await backend.saveProperty({ ...p, featured: !p.featured }); onChange(); }}>{p.featured ? "★ Destacada" : "☆ Destacar"}</button>
                 </td>
                 <td className="num">{p.views ?? 0}</td>
                 <td className="num">{inq.filter((i) => i.propertyId === p.id).length}</td>
@@ -199,12 +247,25 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
 function InquiriesTab({ inq, onChange }: { inq: Inquiry[]; onChange: () => void }) {
   const { backend } = useAuth();
   const [filter, setFilter] = useState<InquiryStatus | "">("");
-  const shown = filter ? inq.filter((i) => i.status === filter) : inq;
+  const [kind, setKind] = useState("");
+  const kinds: [string, string, (i: Inquiry) => boolean][] = [
+    ["", "Todos los tipos", () => true],
+    ["visita", "Visitas agendadas", (i) => /Visita (presencial|videollamada)/.test(i.message)],
+    ["publicar", "Quieren publicar", (i) => /^Quiero (vender|alquilar) una propiedad/.test(i.message)],
+    ["propiedad", "Sobre una propiedad", (i) => !!i.propertyId],
+    ["general", "Generales", (i) => !i.propertyId && !/^Quiero (vender|alquilar)/.test(i.message)],
+  ];
+  const kindMatch = kinds.find((k) => k[0] === kind)![2];
+  const shown = inq.filter((i) => (!filter || i.status === filter) && kindMatch(i));
   const phoneDigits = (s: string) => s.replace(/\D/g, "");
 
   return (
     <>
-      <div className="admin__title"><h1 className="h2">Consultas</h1></div>
+      <div className="admin__title"><h1 className="h2">Consultas</h1>
+        <select className="kind-select" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Tipo de consulta">
+          {kinds.map(([k, l, f]) => <option key={k} value={k}>{l} ({inq.filter(f).length})</option>)}
+        </select>
+      </div>
       <div className="seg">
         {(["", "nueva", "en_proceso", "cerrada"] as const).map((s) => (
           <button key={s} className={filter === s ? "is-active" : ""} onClick={() => setFilter(s)}>
@@ -281,6 +342,7 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
 }
 
 function PaymentsTab({ payments, onChange }: { payments: Payment[]; onChange: () => void }) {
+  const plans = usePlans();
   const { backend } = useAuth();
   const [err, setErr] = useState("");
   const [filter, setFilter] = useState<"pendiente" | "">("pendiente");
@@ -349,6 +411,54 @@ function SellersTab({ sellers, props }: { sellers: Seller[]; props: Property[] }
           </table>
         </div>
       )}
+    </>
+  );
+}
+
+function SettingsTab() {
+  const { backend, settings, reloadSettings } = useAuth();
+  const plans = usePlans();
+  const [f, setF] = useState(settings);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  useEffect(() => { setF(settings); }, [settings]);
+  return (
+    <>
+      <div className="admin__title"><h1 className="h2">Precios y ajustes</h1></div>
+      <form className="settings" onSubmit={async (e) => {
+        e.preventDefault(); setErr(""); setMsg("");
+        try { await backend.saveSettings(f); await reloadSettings(); setMsg("Ajustes guardados. Los nuevos precios ya se ven en el sitio."); }
+        catch (x) { setErr((x as Error).message); }
+      }}>
+        <fieldset className="panel">
+          <legend className="h3">Precios de los planes (lempiras)</legend>
+          <p className="muted small">Cada plan dura {plans.publicacion.days} días. Los cambios aplican a los pagos nuevos; los ya registrados conservan su monto.</p>
+          <div className="grid-3 form">
+            {(Object.keys(plans) as PlanKind[]).map((k) => (
+              <label key={k}>{plans[k].name}
+                <input type="number" min={1} step={1} required value={f.prices[k] || ""} onChange={(e) => setF({ ...f, prices: { ...f.prices, [k]: Number(e.target.value) } })} />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <fieldset className="panel">
+          <legend className="h3">Tipo de cambio</legend>
+          <label className="form">Lempiras por dólar
+            <input type="number" min={1} step={0.01} required value={f.usdRate || ""} onChange={(e) => setF({ ...f, usdRate: Number(e.target.value) })} />
+          </label>
+          <p className="muted small">Se usa para mostrar los precios en las dos monedas, para el filtro de precio y para la comparación.</p>
+        </fieldset>
+        <fieldset className="panel">
+          <legend className="h3">Datos para recibir pagos</legend>
+          <label className="form">Cuenta bancaria que ven los vendedores al pagar
+            <textarea rows={3} value={f.bankInfo} onChange={(e) => setF({ ...f, bankInfo: e.target.value })} placeholder="Banco, tipo de cuenta, número y nombre del titular" />
+          </label>
+          <p className="muted small">Si lo dejas vacío, el vendedor verá un botón para pedir los datos por WhatsApp.</p>
+        </fieldset>
+        {err && <p className="form__error">{err}</p>}
+        {msg && <p className="notice notice--ok">{msg}</p>}
+        <div><button className="btn btn--primary">Guardar ajustes</button></div>
+      </form>
     </>
   );
 }

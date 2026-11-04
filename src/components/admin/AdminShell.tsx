@@ -3,9 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "../AuthProvider";
-import { CardIcon, ChartIcon, HomeIcon, InboxIcon, LogoutIcon, StoreIcon, UsersIcon } from "../Icons";
+import { CalcIcon, CardIcon, ChartIcon, HomeIcon, InboxIcon, LogoutIcon, StoreIcon, UsersIcon } from "../Icons";
 
-export type AdminTab = "resumen" | "propiedades" | "pagos" | "vendedores" | "consultas" | "usuarios";
+export type AdminTab = "resumen" | "propiedades" | "pagos" | "vendedores" | "consultas" | "usuarios" | "ajustes";
 export type SellerTab = "resumen" | "propiedades" | "consultas" | "vitrina" | "planes";
 
 type Item = { tab: string; label: string; icon: React.ReactNode };
@@ -17,6 +17,7 @@ const adminItems: Item[] = [
   { tab: "vendedores", label: "Vendedores", icon: <StoreIcon size={18} /> },
   { tab: "consultas", label: "Consultas", icon: <InboxIcon size={18} /> },
   { tab: "usuarios", label: "Usuarios", icon: <UsersIcon size={18} /> },
+  { tab: "ajustes", label: "Precios y ajustes", icon: <CalcIcon size={18} /> },
 ];
 
 const sellerItems: Item[] = [
