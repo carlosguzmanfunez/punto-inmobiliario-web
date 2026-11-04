@@ -35,3 +35,8 @@ export const InboxIcon = ({ size, className }: P) => (<svg {...base(size)} class
 export const UsersIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><circle cx="9" cy="8" r="3.5" /><path d="M2 20a7 7 0 0 1 14 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 4 6" /></svg>);
 export const LogoutIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" /></svg>);
 export const ImageIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="2" /><path d="m21 16-5-5-9 9" /></svg>);
+export const LinkIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></svg>);
+export const StoreIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><path d="M4 10v10h16V10M3 10l2-6h14l2 6M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M10 20v-5h4v5" /></svg>);
+export const CardIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18M7 15h4" /></svg>);
+export const CheckIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><path d="m5 12 5 5 9-10" /></svg>);
+export const ShareIcon = ({ size, className }: P) => (<svg {...base(size)} className={className}><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></svg>);

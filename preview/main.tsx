@@ -18,11 +18,14 @@ import Financiamiento from "@/app/financiamiento/page";
 import Quienes from "@/app/quienes-somos/page";
 import Vender from "@/app/vender/page";
 import NotFound from "@/app/not-found";
+import Panel from "@/app/panel/page";
+import PanelEditor from "@/app/panel/propiedad/page";
+import SellerPage from "@/components/SellerPage";
 
 const routes: Record<string, () => React.ReactNode> = {
   "/": Home, "/propiedades": Propiedades, "/ingresar": Ingresar, "/cuenta": Cuenta, "/admin": Admin,
   "/admin/propiedad": Editor, "/contacto": Contacto, "/extranjero": Extranjero, "/financiamiento": Financiamiento,
-  "/quienes-somos": Quienes, "/vender": Vender,
+  "/quienes-somos": Quienes, "/vender": Vender, "/panel": Panel, "/panel/propiedad": PanelEditor,
 };
 
 function App() {
@@ -30,11 +33,12 @@ function App() {
   // Cierra el menú móvil al navegar.
   useEffect(() => { const t = document.getElementById("nav-toggle") as HTMLInputElement | null; if (t) t.checked = false; }, [path]);
   const m = path.match(/^\/propiedades\/([^/]+)$/);
+  const v = path.match(/^\/vendedores\/([^/]+)$/);
   const Page = routes[path];
   return (
     <AuthProvider>
       <Header />
-      <main key={path}>{m ? <PropertyDetail slug={decodeURIComponent(m[1])} /> : Page ? <Page /> : <NotFound />}</main>
+      <main key={path}>{m ? <PropertyDetail slug={decodeURIComponent(m[1])} /> : v ? <SellerPage slug={decodeURIComponent(v[1])} /> : Page ? <Page /> : <NotFound />}</main>
       <Footer />
       <WhatsAppButton />
     </AuthProvider>

@@ -12,6 +12,7 @@ export default function AccountButton() {
   return (
     <div className="account-actions">
       {profile.role === "admin" && <Link className="btn btn--outline btn--sm" href="/admin">Panel</Link>}
+      {profile.role === "seller" && <Link className="btn btn--outline btn--sm" href="/panel">Mi panel</Link>}
       <Link className="btn btn--primary btn--sm" href="/cuenta"><UserIcon size={16} /> <span>{first}</span></Link>
     </div>
   );

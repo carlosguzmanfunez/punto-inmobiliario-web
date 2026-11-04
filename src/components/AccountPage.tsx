@@ -7,9 +7,10 @@ import { formatDate, statusLabel } from "@/lib/labels";
 import { useAuth } from "./AuthProvider";
 import PropertyCard from "./PropertyCard";
 import { useProperties } from "./useProperties";
-import { HeartIcon, InboxIcon, LogoutIcon, UserIcon } from "./Icons";
+import { HeartIcon, InboxIcon, KeyIcon, LogoutIcon, UserIcon } from "./Icons";
+import { formatLempiras, plans } from "@/lib/site";
 
-type Tab = "favoritos" | "consultas" | "perfil";
+type Tab = "favoritos" | "consultas" | "perfil" | "vender";
 
 export default function AccountPage() {
   const { backend, profile, loading, favorites, refresh } = useAuth();
@@ -20,6 +21,8 @@ export default function AccountPage() {
   const [inquiries, setInquiries] = useState<Inquiry[] | null>(null);
   const [f, setF] = useState({ fullName: "", phone: "" });
   const [saved, setSaved] = useState("");
+  const [business, setBusiness] = useState("");
+  const [sellErr, setSellErr] = useState("");
 
   useEffect(() => { if (!loading && !profile) router.replace("/ingresar?next=/cuenta"); }, [loading, profile, router]);
   useEffect(() => { if (profile) { setF({ fullName: profile.fullName, phone: profile.phone }); backend.listMyInquiries().then(setInquiries); } }, [profile, backend]);
@@ -33,7 +36,7 @@ export default function AccountPage() {
         <div className="avatar" aria-hidden>{(profile.fullName || profile.email).slice(0, 1).toUpperCase()}</div>
         <div>
           <h1 className="h2">Hola, {profile.fullName.split(" ")[0] || "bienvenido"}</h1>
-          <p className="muted">{profile.email}{profile.role === "admin" && <> · <Link className="link-arrow" href="/admin">Ir al panel de administración →</Link></>}</p>
+          <p className="muted">{profile.email}{profile.role === "admin" && <> · <Link className="link-arrow" href="/admin">Ir al panel de administración →</Link></>}{profile.role === "seller" && <> · <Link className="link-arrow" href="/panel">Ir a mi panel de vendedor →</Link></>}</p>
         </div>
         <button className="btn btn--ghost btn--sm" onClick={async () => { router.replace("/"); await backend.signOut(); await refresh(); }}><LogoutIcon size={16} /> Cerrar sesión</button>
       </div>
@@ -42,6 +45,7 @@ export default function AccountPage() {
         <button role="tab" aria-selected={tab === "favoritos"} className={tab === "favoritos" ? "is-active" : ""} onClick={() => setTab("favoritos")}><HeartIcon size={16} /> Favoritos <span className="count">{favorites.size}</span></button>
         <button role="tab" aria-selected={tab === "consultas"} className={tab === "consultas" ? "is-active" : ""} onClick={() => setTab("consultas")}><InboxIcon size={16} /> Mis consultas <span className="count">{inquiries?.length ?? 0}</span></button>
         <button role="tab" aria-selected={tab === "perfil"} className={tab === "perfil" ? "is-active" : ""} onClick={() => setTab("perfil")}><UserIcon size={16} /> Mis datos</button>
+        {profile.role === "user" && <button role="tab" aria-selected={tab === "vender"} className={tab === "vender" ? "is-active" : ""} onClick={() => setTab("vender")}><KeyIcon size={16} /> Quiero vender</button>}
       </div>
 
       {tab === "favoritos" && (favs.length ? (
@@ -66,6 +70,20 @@ export default function AccountPage() {
       ) : (
         <div className="empty"><p>Aún no has enviado consultas. En cada propiedad puedes dejarnos un mensaje y aquí verás su estado.</p></div>
       ))}
+
+      {tab === "vender" && profile.role === "user" && (
+        <form className="form form--narrow" onSubmit={async (e) => {
+          e.preventDefault(); setSellErr("");
+          try { await backend.becomeSeller(business); await refresh(); router.push("/panel"); } catch (x) { setSellErr((x as Error).message); }
+        }}>
+          <h2 className="h3">Publica tus propiedades en Punto Inmobiliario</h2>
+          <p className="muted">Activa tu cuenta de vendedor gratis. Solo pagas cuando publicas: {formatLempiras(plans.publicacion.price)} por propiedad durante {plans.publicacion.days} días, con un link profesional para enviar a tus compradores.</p>
+          <label>Nombre de tu negocio o tu nombre<input required value={business} onChange={(e) => setBusiness(e.target.value)} placeholder={profile.fullName} /></label>
+          {sellErr && <p className="form__error">{sellErr}</p>}
+          <button className="btn btn--primary">Activar cuenta de vendedor</button>
+          <Link href="/vender" className="link-arrow small">Ver planes y precios →</Link>
+        </form>
+      )}
 
       {tab === "perfil" && (
         <form className="form form--narrow" onSubmit={async (e) => { e.preventDefault(); await backend.updateProfile(f); await refresh(); setSaved("Datos guardados."); setTimeout(() => setSaved(""), 2500); }}>

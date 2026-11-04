@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { cities, slugify, typeLabel, type Property } from "@/data/properties";
+import { cities, listingStatusLabel, slugify, typeLabel, type Property } from "@/data/properties";
 import type { PropertyInput } from "@/lib/backend";
 import { useAuth } from "../AuthProvider";
 import { CloseIcon, ImageIcon } from "../Icons";
@@ -11,15 +11,19 @@ import AdminShell from "./AdminShell";
 const empty: PropertyInput = {
   slug: "", title: "", operation: "venta", type: "casa", price: 0, currency: "USD", city: "Tegucigalpa",
   neighborhood: "", bedrooms: 0, bathrooms: 0, areaM2: 0, lotM2: undefined, parking: 0, images: [], features: [],
-  description: "", isNew: true, featured: false, published: true,
+  description: "", isNew: true, featured: false, published: true, status: "publicada",
 };
 
-export default function PropertyEditor() {
+// Editor de propiedades. En el panel del vendedor no se elige la visibilidad: la publicación
+// se activa al confirmar el pago de un plan.
+export default function PropertyEditor({ mode = "admin" }: { mode?: "admin" | "seller" }) {
   const sp = useSearchParams();
   const id = sp.get("id");
   const router = useRouter();
   const { backend, profile } = useAuth();
-  const [p, setP] = useState<PropertyInput | null>(id ? null : empty);
+  const seller = mode === "seller";
+  const back = seller ? "/panel?tab=propiedades" : "/admin?tab=propiedades";
+  const [p, setP] = useState<PropertyInput | null>(id ? null : seller ? { ...empty, status: "borrador", published: false } : empty);
   const [featuresText, setFeaturesText] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(0);
@@ -28,14 +32,14 @@ export default function PropertyEditor() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!id || profile?.role !== "admin") return;
-    backend.listProperties({ includeUnpublished: true }).then((l) => {
+    if (!id || !profile || profile.role === "user") return;
+    (seller ? backend.listProperties({ ownerId: profile.id }) : backend.listProperties({ includeUnpublished: true })).then((l) => {
       const found = l.find((x) => x.id === id);
       if (!found) { setError("No encontramos esa propiedad."); return; }
       const { views: _v, createdAt: _c, ...rest } = found as Property;
       setP(rest); setFeaturesText(found.features.join("\n"));
     });
-  }, [id, backend, profile]);
+  }, [id, backend, profile, seller]);
 
   const set = <K extends keyof PropertyInput>(k: K, v: PropertyInput[K]) => setP((x) => (x ? { ...x, [k]: v } : x));
   const num = (v: string) => (v === "" ? 0 : Number(v));
@@ -68,17 +72,17 @@ export default function PropertyEditor() {
     try {
       const features = featuresText.split(/\n|,/).map((s) => s.trim()).filter(Boolean);
       await backend.saveProperty({ ...p, features, slug: p.slug || slugify(p.title) });
-      router.push("/admin?tab=propiedades");
+      router.push(back);
     } catch (err) { setError((err as Error).message); setBusy(false); }
   };
 
   const isLand = p?.type === "terreno";
 
   return (
-    <AdminShell active="propiedades">
+    <AdminShell active="propiedades" mode={mode}>
       <div className="admin__title">
         <h1 className="h2">{id ? "Editar propiedad" : "Nueva propiedad"}</h1>
-        <Link className="btn btn--ghost" href="/admin?tab=propiedades">Cancelar</Link>
+        <Link className="btn btn--ghost" href={back}>Cancelar</Link>
       </div>
       {!p ? <p className="muted">{error || "Cargando…"}</p> : (
         <form className="editor" onSubmit={submit}>
@@ -144,13 +148,23 @@ export default function PropertyEditor() {
           <aside className="editor__side">
             <div className="panel">
               <h2 className="h3">Publicación</h2>
-              <label className="check"><input type="checkbox" checked={p.published !== false} onChange={(e) => set("published", e.target.checked)} /> Visible en el sitio</label>
-              <label className="check"><input type="checkbox" checked={!!p.featured} onChange={(e) => set("featured", e.target.checked)} /> Destacada en la portada</label>
-              <label className="check"><input type="checkbox" checked={!!p.isNew} onChange={(e) => set("isNew", e.target.checked)} /> Etiqueta “Nuevo”</label>
+              {seller ? (
+                <>
+                  <p className="small">Estado: <strong>{listingStatusLabel[p.status ?? "borrador"]}</strong></p>
+                  <p className="muted small">{p.status === "publicada" || p.status === "pausada"
+                    ? "Los cambios se verán en tu publicación en cuanto guardes."
+                    : "Guarda la propiedad y luego toca “Publicar” en tu panel para elegir el plan y activar tu link profesional."}</p>
+                  <label className="check"><input type="checkbox" checked={!!p.isNew} onChange={(e) => set("isNew", e.target.checked)} /> Etiqueta “Nuevo”</label>
+                </>
+              ) : <>
+                <label className="check"><input type="checkbox" checked={(p.status ?? "publicada") === "publicada"} onChange={(e) => setP((x) => (x ? { ...x, status: e.target.checked ? "publicada" : "pausada", published: e.target.checked } : x))} /> Visible en el sitio</label>
+                <label className="check"><input type="checkbox" checked={!!p.featured} onChange={(e) => set("featured", e.target.checked)} /> Destacada en la portada</label>
+                <label className="check"><input type="checkbox" checked={!!p.isNew} onChange={(e) => set("isNew", e.target.checked)} /> Etiqueta “Nuevo”</label>
+              </>}
               <label>Dirección web<input value={p.slug} onChange={(e) => set("slug", e.target.value)} placeholder={slugify(p.title) || "se-genera-del-titulo"} /></label>
               <p className="muted small">/propiedades/{p.slug ? slugify(p.slug) : slugify(p.title) || "…"}</p>
               {error && <p className="form__error">{error}</p>}
-              <button className="btn btn--primary btn--block" disabled={busy || uploading > 0}>{busy ? "Guardando…" : id ? "Guardar cambios" : "Publicar propiedad"}</button>
+              <button className="btn btn--primary btn--block" disabled={busy || uploading > 0}>{busy ? "Guardando…" : id ? "Guardar cambios" : seller ? "Guardar propiedad" : "Publicar propiedad"}</button>
             </div>
           </aside>
         </form>

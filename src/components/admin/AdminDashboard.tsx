@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatPrice, operationLabel, typeLabel, type Property } from "@/data/properties";
-import type { Inquiry, InquiryStatus, UserRow } from "@/lib/backend";
-import { formatDate, statusLabel } from "@/lib/labels";
-import { whatsappLink } from "@/lib/site";
+import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
+import { roleLabel, vitrinaActive, type Inquiry, type InquiryStatus, type Payment, type Role, type Seller, type UserRow } from "@/lib/backend";
+import { daysLeft, formatDate, paymentStatusLabel, statusLabel } from "@/lib/labels";
+import { formatLempiras, plans } from "@/lib/site";
 import { useAuth } from "../AuthProvider";
 import { EditIcon, EyeIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import AdminShell, { type AdminTab } from "./AdminShell";
@@ -17,26 +17,33 @@ export default function AdminDashboard() {
   const [props, setProps] = useState<Property[] | null>(null);
   const [inq, setInq] = useState<Inquiry[] | null>(null);
   const [users, setUsers] = useState<UserRow[] | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const [p, i, u] = await Promise.all([backend.listProperties({ includeUnpublished: true }), backend.listInquiries(), backend.listUsers()]);
-      setProps(p); setInq(i); setUsers(u);
+      const [p, i, u, pay, sel] = await Promise.all([
+        backend.listProperties({ includeUnpublished: true }), backend.listInquiries(), backend.listUsers(), backend.listPayments(), backend.listSellers(),
+      ]);
+      setProps(p); setInq(i); setUsers(u); setPayments(pay); setSellers(sel);
     } catch (e) { setError((e as Error).message); }
   }, [backend]);
 
   useEffect(() => { if (profile?.role === "admin") load(); }, [profile, load]);
 
   const newCount = inq?.filter((i) => i.status === "nueva").length ?? 0;
+  const payCount = payments.filter((x) => x.status === "pendiente").length;
 
   return (
-    <AdminShell active={tab} badge={newCount}>
+    <AdminShell active={tab} badges={{ consultas: newCount, pagos: payCount }}>
       {error && <p className="form__error">{error}</p>}
       {!props || !inq || !users ? <p className="muted">Cargando datos…</p> : (
         <>
-          {tab === "resumen" && <Summary props={props} inq={inq} users={users} />}
-          {tab === "propiedades" && <PropertiesTab props={props} inq={inq} onChange={load} />}
+          {tab === "resumen" && <Summary props={props} inq={inq} users={users} payments={payments} />}
+          {tab === "propiedades" && <PropertiesTab props={props} inq={inq} sellers={sellers} onChange={load} />}
+          {tab === "pagos" && <PaymentsTab payments={payments} onChange={load} />}
+          {tab === "vendedores" && <SellersTab sellers={sellers} props={props} />}
           {tab === "consultas" && <InquiriesTab inq={inq} onChange={load} />}
           {tab === "usuarios" && <UsersTab users={users} meId={profile?.id ?? ""} onChange={load} />}
         </>
@@ -50,8 +57,11 @@ function Stat({ label, value, hint, href }: { label: string; value: string | num
   return href ? <Link href={href} className="stat">{body}</Link> : <div className="stat">{body}</div>;
 }
 
-function Summary({ props, inq, users }: { props: Property[]; inq: Inquiry[]; users: UserRow[] }) {
-  const published = props.filter((p) => p.published !== false);
+function Summary({ props, inq, users, payments }: { props: Property[]; inq: Inquiry[]; users: UserRow[]; payments: Payment[] }) {
+  const published = props.filter((p) => isLive(p));
+  const month = new Date(); month.setDate(1); month.setHours(0, 0, 0, 0);
+  const income = payments.filter((x) => x.status === "pagado" && x.confirmedAt && new Date(x.confirmedAt) >= month).reduce((s, x) => s + x.amount, 0);
+  const toConfirm = payments.filter((x) => x.status === "pendiente").length;
   const views = props.reduce((s, p) => s + (p.views ?? 0), 0);
   const nuevas = inq.filter((i) => i.status === "nueva").length;
   const since = Date.now() - 30 * 864e5;
@@ -77,6 +87,7 @@ function Summary({ props, inq, users }: { props: Property[]; inq: Inquiry[]; use
         <Stat label="Consultas nuevas" value={nuevas} hint={`${inq.length} en total`} href="/admin?tab=consultas" />
         <Stat label="Visitas a propiedades" value={views.toLocaleString("es-HN")} hint="desde que se publicaron" />
         <Stat label="Usuarios registrados" value={users.length} hint={`${newUsers} en los últimos 30 días`} href="/admin?tab=usuarios" />
+        <Stat label="Ingresos del mes" value={formatLempiras(income)} hint={`${toConfirm} pagos por confirmar`} href="/admin?tab=pagos" />
       </div>
       <div className="panels">
         <div className="panel">
@@ -125,7 +136,7 @@ function Summary({ props, inq, users }: { props: Property[]; inq: Inquiry[]; use
   );
 }
 
-function PropertiesTab({ props, inq, onChange }: { props: Property[]; inq: Inquiry[]; onChange: () => void }) {
+function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; inq: Inquiry[]; sellers: Seller[]; onChange: () => void }) {
   const { backend } = useAuth();
   const [q, setQ] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -140,7 +151,7 @@ function PropertiesTab({ props, inq, onChange }: { props: Property[]; inq: Inqui
       <input className="admin__search" type="search" placeholder="Buscar por título, ciudad o colonia" value={q} onChange={(e) => setQ(e.target.value)} />
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Propiedad</th><th>Operación</th><th>Precio</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th aria-label="Acciones" /></tr></thead>
+          <thead><tr><th>Propiedad</th><th>Publica</th><th>Precio</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th aria-label="Acciones" /></tr></thead>
           <tbody>
             {shown.map((p) => (
               <tr key={p.id}>
@@ -150,13 +161,18 @@ function PropertiesTab({ props, inq, onChange }: { props: Property[]; inq: Inqui
                     <div><Link href={`/admin/propiedad?id=${p.id}`} className="t-prop__title">{p.title}</Link><span className="muted small">{typeLabel[p.type]} · {p.neighborhood}, {p.city}</span></div>
                   </div>
                 </td>
-                <td>{operationLabel[p.operation]}</td>
+                <td className="small">{p.ownerId ? sellers.find((x) => x.id === p.ownerId)?.name ?? "Vendedor" : "Punto Inmobiliario"}<br /><span className="muted">{operationLabel[p.operation]}</span></td>
                 <td className="nowrap">{formatPrice(p)}</td>
                 <td>
-                  <button className={`pill ${p.published !== false ? "pill--on" : ""}`} title="Cambiar visibilidad"
-                    onClick={async () => { await backend.saveProperty({ ...p, published: p.published === false }); onChange(); }}>
-                    {p.published !== false ? "Publicada" : "Oculta"}
-                  </button>
+                  {p.ownerId && p.status !== "publicada" && p.status !== "pausada" ? (
+                    <span className={`pill pill--static ${p.status === "pendiente" ? "pill--accent" : ""}`}>{listingStatusLabel[p.status ?? "borrador"]}</span>
+                  ) : (
+                    <button className={`pill ${isLive(p) ? "pill--on" : ""}`} title="Cambiar visibilidad"
+                      onClick={async () => { await backend.saveProperty({ ...p, status: p.status === "publicada" ? "pausada" : "publicada" }); onChange(); }}>
+                      {isLive(p) ? "Publicada" : p.status === "publicada" ? "Vencida" : "Oculta"}
+                    </button>
+                  )}
+                  {p.ownerId && isLive(p) && <span className="muted small"> {daysLeft(p.paidUntil)} días</span>}
                   {p.featured && <span className="pill pill--accent">Destacada</span>}
                 </td>
                 <td className="num">{p.views ?? 0}</td>
@@ -238,7 +254,7 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
       {err && <p className="form__error">{err}</p>}
       <div className="table-wrap">
         <table className="table">
-          <thead><tr><th>Nombre</th><th>Contacto</th><th>Registro</th><th className="num">Favoritos</th><th className="num">Consultas</th><th>Rol</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Contacto</th><th>Registro</th><th className="num">Favoritos</th><th className="num">Consultas</th><th className="num">Publicaciones</th><th>Rol</th></tr></thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
@@ -247,11 +263,11 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
                 <td className="nowrap">{formatDate(u.createdAt)}</td>
                 <td className="num">{u.favorites}</td>
                 <td className="num">{u.inquiries}</td>
+                <td className="num">{u.properties}</td>
                 <td>
                   <select value={u.role} disabled={u.id === meId} aria-label="Rol"
-                    onChange={async (e) => { setErr(""); try { await backend.setUserRole(u.id, e.target.value as "user" | "admin"); onChange(); } catch (x) { setErr((x as Error).message); } }}>
-                    <option value="user">Cliente</option>
-                    <option value="admin">Administrador</option>
+                    onChange={async (e) => { setErr(""); try { await backend.setUserRole(u.id, e.target.value as Role); onChange(); } catch (x) { setErr((x as Error).message); } }}>
+                    {(Object.keys(roleLabel) as Role[]).map((r) => <option key={r} value={r}>{roleLabel[r]}</option>)}
                   </select>
                 </td>
               </tr>
@@ -259,7 +275,80 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
           </tbody>
         </table>
       </div>
-      <p className="muted small">Los clientes pueden guardar favoritos y enviar consultas. Los administradores ven este panel y pueden publicar propiedades.</p>
+      <p className="muted small">Los compradores guardan favoritos y envían consultas. Los vendedores publican sus propiedades pagando un plan. Los administradores ven este panel.</p>
+    </>
+  );
+}
+
+function PaymentsTab({ payments, onChange }: { payments: Payment[]; onChange: () => void }) {
+  const { backend } = useAuth();
+  const [err, setErr] = useState("");
+  const [filter, setFilter] = useState<"pendiente" | "">("pendiente");
+  const shown = filter ? payments.filter((x) => x.status === filter) : payments;
+  const act = async (fn: () => Promise<void>) => { setErr(""); try { await fn(); onChange(); } catch (e) { setErr((e as Error).message); } };
+  return (
+    <>
+      <div className="admin__title"><h1 className="h2">Pagos</h1></div>
+      <div className="seg">
+        <button className={filter === "pendiente" ? "is-active" : ""} onClick={() => setFilter("pendiente")}>Por confirmar <span className="count">{payments.filter((x) => x.status === "pendiente").length}</span></button>
+        <button className={filter === "" ? "is-active" : ""} onClick={() => setFilter("")}>Todos <span className="count">{payments.length}</span></button>
+      </div>
+      {err && <p className="form__error">{err}</p>}
+      {shown.length === 0 ? <div className="empty"><p>No hay pagos por confirmar.</p></div> : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>Fecha</th><th>Vendedor</th><th>Plan</th><th className="num">Monto</th><th>Referencia</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
+            <tbody>
+              {shown.map((x) => (
+                <tr key={x.id}>
+                  <td className="nowrap">{formatDate(x.createdAt)}</td>
+                  <td><strong>{x.sellerName ?? "Vendedor"}</strong><br /><span className="muted small">{x.kind === "vitrina" ? "Vitrina" : x.propertyTitle ?? "Propiedad eliminada"}</span></td>
+                  <td>{plans[x.kind].name}</td>
+                  <td className="num nowrap">{formatLempiras(x.amount)}</td>
+                  <td className="small">{x.reference}</td>
+                  <td><span className={`pay-status pay-status--${x.status}`}>{paymentStatusLabel[x.status]}</span></td>
+                  <td className="actions">
+                    {x.status === "pendiente" && <>
+                      <button className="btn btn--primary btn--sm" onClick={() => act(() => backend.confirmPayment(x.id))}>Confirmar</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => act(() => backend.rejectPayment(x.id))}>Rechazar</button>
+                    </>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="muted small">Confirma un pago cuando lo veas en tu cuenta bancaria. Al confirmarlo, la publicación o la vitrina se activa por {plans.publicacion.days} días.</p>
+    </>
+  );
+}
+
+function SellersTab({ sellers, props }: { sellers: Seller[]; props: Property[] }) {
+  return (
+    <>
+      <div className="admin__title"><h1 className="h2">Vendedores <span className="muted">({sellers.length})</span></h1></div>
+      {sellers.length === 0 ? <div className="empty"><p>Todavía no hay vendedores registrados.</p></div> : (
+        <div className="table-wrap">
+          <table className="table">
+            <thead><tr><th>Vendedor</th><th>WhatsApp</th><th className="num">Activas</th><th className="num">Total</th><th>Vitrina</th></tr></thead>
+            <tbody>
+              {sellers.map((s) => {
+                const mine = props.filter((p) => p.ownerId === s.id);
+                return (
+                  <tr key={s.id}>
+                    <td><Link href={`/vendedores/${s.slug}`} className="t-prop__title">{s.name}</Link><br /><span className="muted small">{s.city || "Sin ciudad"} · desde {formatDate(s.createdAt)}</span></td>
+                    <td className="small nowrap">{s.whatsapp || "—"}</td>
+                    <td className="num">{mine.filter((p) => isLive(p)).length}</td>
+                    <td className="num">{mine.length}</td>
+                    <td>{vitrinaActive(s) ? <span className="pill pill--static pill--on">{daysLeft(s.vitrinaUntil)} días</span> : <span className="pill pill--static">Inactiva</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

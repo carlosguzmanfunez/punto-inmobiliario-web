@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { DEMO_ADMIN } from "@/lib/backend/demo";
+import { DEMO_ADMIN, DEMO_BUYER, DEMO_SELLER } from "@/lib/backend/demo";
 import { useAuth } from "./AuthProvider";
 
 export default function LoginForm() {
@@ -11,13 +11,14 @@ export default function LoginForm() {
   const sp = useSearchParams();
   const next = sp.get("next");
   const [mode, setMode] = useState<"login" | "registro" | "olvido">(sp.get("modo") === "registro" ? "registro" : "login");
-  const [f, setF] = useState({ fullName: "", phone: "", email: "", password: "" });
+  const [f, setF] = useState({ fullName: "", phone: "", email: "", password: "", businessName: "" });
+  const [accountType, setAccountType] = useState<"comprador" | "vendedor">(sp.get("tipo") === "vendedor" ? "vendedor" : "comprador");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
   useEffect(() => {
-    if (profile) router.replace(next || (profile.role === "admin" ? "/admin" : "/cuenta"));
+    if (profile) router.replace(next || (profile.role === "admin" ? "/admin" : profile.role === "seller" ? "/panel" : "/cuenta"));
   }, [profile, next, router]);
 
   const submit = async (e: React.FormEvent) => {
@@ -25,7 +26,7 @@ export default function LoginForm() {
     try {
       if (mode === "login") await backend.signIn(f.email, f.password);
       else if (mode === "registro") {
-        const r = await backend.signUp(f);
+        const r = await backend.signUp({ ...f, accountType });
         if (r.needsConfirmation) { setInfo("Te enviamos un correo para confirmar tu cuenta. Abre el enlace y luego ingresa."); setMode("login"); }
       } else { await backend.resetPassword(f.email); setInfo("Si el correo está registrado, te llegará un enlace para crear una contraseña nueva."); }
       await refresh();
@@ -45,6 +46,11 @@ export default function LoginForm() {
       {mode === "olvido" && <h2 className="h3">Recuperar contraseña</h2>}
       <form className="form" onSubmit={submit}>
         {mode === "registro" && <>
+          <div className="account-type" role="radiogroup" aria-label="Tipo de cuenta">
+            <label className={accountType === "comprador" ? "is-active" : ""}><input type="radio" name="tipo" checked={accountType === "comprador"} onChange={() => setAccountType("comprador")} /><strong>Busco propiedad</strong><span>Guarda favoritos y consulta</span></label>
+            <label className={accountType === "vendedor" ? "is-active" : ""}><input type="radio" name="tipo" checked={accountType === "vendedor"} onChange={() => setAccountType("vendedor")} /><strong>Quiero vender</strong><span>Publica tus propiedades</span></label>
+          </div>
+          {accountType === "vendedor" && <label>Nombre de tu negocio (opcional)<input value={f.businessName} onChange={(e) => setF({ ...f, businessName: e.target.value })} placeholder="Ej. Inmobiliaria Los Pinos" /></label>}
           <label>Nombre completo<input required value={f.fullName} onChange={(e) => setF({ ...f, fullName: e.target.value })} autoComplete="name" /></label>
           <label>Teléfono o WhatsApp<input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} placeholder="+504 9999-9999" autoComplete="tel" /></label>
         </>}
@@ -63,7 +69,8 @@ export default function LoginForm() {
           <strong>Modo de prueba.</strong> Los datos se guardan solo en este navegador.
           <div className="demo-box__row">
             <button type="button" className="btn btn--outline btn--sm" onClick={() => { setMode("login"); setF({ ...f, email: DEMO_ADMIN.email, password: DEMO_ADMIN.password }); }}>Usar cuenta de administrador</button>
-            <button type="button" className="btn btn--outline btn--sm" onClick={() => { setMode("login"); setF({ ...f, email: "maria@ejemplo.com", password: "maria123" }); }}>Usar cuenta de cliente</button>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => { setMode("login"); setF({ ...f, email: DEMO_SELLER.email, password: DEMO_SELLER.password }); }}>Usar cuenta de vendedor</button>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => { setMode("login"); setF({ ...f, email: DEMO_BUYER.email, password: DEMO_BUYER.password }); }}>Usar cuenta de comprador</button>
           </div>
         </div>
       )}

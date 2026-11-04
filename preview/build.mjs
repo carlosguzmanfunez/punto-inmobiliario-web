@@ -20,7 +20,7 @@ let js = r.outputFiles[0].text.replaceAll('"/img/', '"img/').replaceAll("`/img/"
 writeFileSync(path.join(out, "app.js"), js);
 writeFileSync(path.join(out, "styles.css"), readFileSync(path.join(root, "src/app/globals.css"), "utf8").replaceAll('url("/img/', 'url("img/'));
 cpSync(path.join(root, "public/img"), path.join(out, "img"), { recursive: true });
-writeFileSync(path.join(out, "index.html"), `<title>Punto Inmobiliario Hn</title>
+writeFileSync(path.join(out, "index.html"), `<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Punto Inmobiliario Hn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css"><style>body{background:#fff;color:#1b1f24;font-family:"Plus Jakarta Sans",system-ui,sans-serif}</style>
 <div id="root"></div><script src="app.js"></script>

@@ -7,11 +7,12 @@ import FavoriteButton from "./FavoriteButton";
 // (scroll-snap), etiquetas y datos clave debajo.
 export default function PropertyCard({ p }: { p: Property }) {
   const href = `/propiedades/${p.slug}`;
+  const images = p.images.length ? p.images : ["/img/casa-1.svg"];
   return (
     <article className="card">
       <div className="card__media">
         <div className="card__slides" tabIndex={0} aria-label={`Fotos de ${p.title}`}>
-          {p.images.map((src, i) => (
+          {images.map((src, i) => (
             <Link key={src + i} href={href} className="card__slide">
               <img src={src} alt={`${p.title}, foto ${i + 1}`} loading="lazy" />
             </Link>
@@ -22,9 +23,9 @@ export default function PropertyCard({ p }: { p: Property }) {
           {p.isNew && <span className="badge badge--accent">Nuevo</span>}
         </div>
         <FavoriteButton id={p.id} />
-        {p.images.length > 1 && (
+        {images.length > 1 && (
           <div className="card__dots" aria-hidden>
-            {p.images.map((_, i) => <span key={i} />)}
+            {images.map((_, i) => <span key={i} />)}
           </div>
         )}
       </div>

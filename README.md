@@ -11,7 +11,7 @@ node preview/build.mjs <carpeta>   # vista previa de una sola página (modo demo
 ```
 
 ## Modos de datos
-- **Demo** (sin configurar nada): todo se guarda en el navegador. Cuenta de administrador: `admin@demo.hn` / `admin123`; cliente: `maria@ejemplo.com` / `maria123`.
+- **Demo** (sin configurar nada): todo se guarda en el navegador. Cuentas: administrador `admin@demo.hn` / `admin123`; vendedor `ventas@morazan.hn` / `vende123`; comprador `maria@ejemplo.com` / `maria123`.
 - **Supabase** (producción): crea `.env.local` con
   ```
   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
@@ -21,13 +21,34 @@ node preview/build.mjs <carpeta>   # vista previa de una sola página (modo demo
   `insert into admin_emails values ('tu@correo.com');` antes de registrarte, o
   `update profiles set role = 'admin' where email = 'tu@correo.com';` después.
 
+## Tipos de usuario
+- **Comprador** (`user`): busca, guarda favoritos y envía consultas.
+- **Vendedor** (`seller`): publica sus propiedades desde `/panel`, recibe consultas y tiene su vitrina.
+- **Administrador** (`admin`): administra todo desde `/admin` y confirma los pagos.
+
+## Cómo se cobra
+1. El vendedor crea su cuenta gratis y prepara sus propiedades (quedan en **borrador**).
+2. Toca **Publicar**, elige un plan y escribe la referencia de su transferencia (la propiedad pasa a **pendiente**).
+3. El administrador confirma el pago en `/admin?tab=pagos`: la propiedad se publica por 30 días y el vendedor recibe su **link profesional** (`/propiedades/<slug>`).
+4. Al vencer, la publicación se oculta sola hasta que se renueve.
+5. La **vitrina** (`/vendedores/<slug>`) es una página propia del vendedor con todas sus propiedades; se activa con el plan Vitrina.
+
+Los precios de los planes están en `src/lib/site.ts` (`plans`). La base de datos impide que un vendedor se publique sin pago (`protect_listing` en `supabase/schema.sql`).
+
 ## Secciones
-- `/ingresar`: registro, ingreso y recuperación de contraseña.
-- `/cuenta`: favoritos, mis consultas y mis datos.
-- `/admin`: resumen con estadísticas, propiedades (crear, editar, ocultar, eliminar, fotos), consultas (estado, responder por WhatsApp) y usuarios (roles).
+- `/ingresar`: registro (comprador o vendedor), ingreso y recuperación de contraseña.
+- `/cuenta`: favoritos, mis consultas, mis datos y “Quiero vender”.
+- `/panel`: panel del vendedor (propiedades, consultas, vitrina, planes y pagos).
+- `/vender`: página de planes y precios para vendedores.
+- `/vendedores/<slug>`: vitrina pública del vendedor.
+- `/admin`: resumen e ingresos, propiedades, pagos, vendedores, consultas y usuarios.
 
 ## Dónde cambiar cosas
-- `src/lib/site.ts`: número de WhatsApp, correo, horario y menú.
+- `src/lib/site.ts`: número de WhatsApp, correo, horario, menú y precios de los planes.
 - `src/lib/backend/`: conexión a datos (`supabase.ts` y `demo.ts`).
 - `src/data/properties.ts`: tipos y propiedades iniciales.
 - `src/app/globals.css`: colores y estilos.
+
+## Nota para compilar en Linux sin glibc detectada
+Si `next build` dice que Turbopack no tiene bindings nativos, instala el binario correcto sin guardarlo:
+`npm install --no-save @next/swc-linux-x64-gnu@16.3.6`.

@@ -25,7 +25,26 @@ export type Property = {
   published?: boolean;
   views?: number;
   createdAt?: string;
+  // Publicaciones de vendedores (las de Punto Inmobiliario no tienen dueño).
+  ownerId?: string | null;
+  status?: ListingStatus;
+  paidUntil?: string | null;
 };
+
+// borrador: el vendedor la está preparando · pendiente: espera pago y revisión ·
+// publicada: visible hasta paidUntil · pausada: el vendedor la ocultó · rechazada: no aprobada.
+export type ListingStatus = "borrador" | "pendiente" | "publicada" | "pausada" | "rechazada";
+
+export const listingStatusLabel: Record<ListingStatus, string> = {
+  borrador: "Borrador", pendiente: "Pendiente de pago", publicada: "Publicada", pausada: "Pausada", rechazada: "Rechazada",
+};
+
+// Una propiedad se ve en el sitio si está publicada y, si es de un vendedor, su plan sigue vigente.
+export function isLive(p: Property, now = Date.now()) {
+  if (p.published === false) return false;
+  if (!p.ownerId) return true;
+  return !!p.paidUntil && new Date(p.paidUntil).getTime() >= now;
+}
 
 // Propiedades iniciales: se usan en el modo demo y como carga inicial de la base de datos.
 const seed: Omit<Property, "id">[] = [
