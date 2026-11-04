@@ -130,16 +130,16 @@ function Summary({ props, inq, seller, payments, onPay }: { props: Property[]; i
           <section className="panel dash-span-2">
             <div className="panel__head"><h2 className="h3">Desempeño de tus propiedades</h2><Link href="/panel?tab=propiedades" className="link-arrow small">Administrar →</Link></div>
             <div className="table-wrap table-wrap--flat">
-              <table className="table table--compact">
+              <table className="table table--compact table--stack">
                 <thead><tr><th>Propiedad</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th className="num">Conversión</th></tr></thead>
                 <tbody>
                   {perf.map(({ p, leads }) => (
                     <tr key={p.id}>
                       <td><div className="t-prop"><img src={p.images[0] ?? "/img/casa-1.svg"} alt="" /><div><Link href={`/propiedades/${p.slug}`} className="t-prop__title">{p.title}</Link><span className="muted small">{formatPrice(p)}</span></div></div></td>
-                      <td><StatusPill p={p} pending={pendingFor(payments, p.id)} />{isLive(p) && <span className="muted small"> {plural(daysLeft(p.paidUntil), "día", "días")}</span>}</td>
-                      <td className="num">{(p.views ?? 0).toLocaleString("es-HN")}</td>
-                      <td className="num">{leads}</td>
-                      <td className="num">{p.views ? `${((leads / p.views) * 100).toFixed(1)}%` : "—"}</td>
+                      <td data-label="Estado"><StatusPill p={p} pending={pendingFor(payments, p.id)} />{isLive(p) && <span className="muted small"> {plural(daysLeft(p.paidUntil), "día", "días")}</span>}</td>
+                      <td className="num" data-label="Visitas">{(p.views ?? 0).toLocaleString("es-HN")}</td>
+                      <td className="num" data-label="Consultas">{leads}</td>
+                      <td className="num" data-label="Conversión">{p.views ? `${((leads / p.views) * 100).toFixed(1)}%` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -327,17 +327,17 @@ function Plans({ payments }: { payments: Payment[] }) {
       <h2 className="h3">Historial</h2>
       {payments.length === 0 ? <p className="muted">Todavía no has hecho pagos.</p> : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Fecha</th><th>Plan</th><th>Para</th><th className="num">Monto</th><th>Referencia</th><th>Estado</th></tr></thead>
             <tbody>
               {payments.map((x) => (
                 <tr key={x.id}>
                   <td className="nowrap">{formatDate(x.createdAt)}</td>
-                  <td>{plans[x.kind].name}</td>
-                  <td>{x.kind === "vitrina" ? "Mi vitrina" : x.propertyTitle ?? "Propiedad eliminada"}</td>
-                  <td className="num nowrap">{formatLempiras(x.amount)}</td>
-                  <td className="small">{x.reference}{x.receipt && <><br /><ReceiptButton receipt={x.receipt} /></>}</td>
-                  <td><span className={`pay-status pay-status--${x.status}`}>{paymentStatusLabel[x.status]}</span></td>
+                  <td data-label="Plan">{plans[x.kind].name}</td>
+                  <td data-label="Para">{x.kind === "vitrina" ? "Mi vitrina" : x.propertyTitle ?? "Propiedad eliminada"}</td>
+                  <td className="num nowrap" data-label="Monto">{formatLempiras(x.amount)}</td>
+                  <td className="small" data-label="Referencia">{x.reference}{x.receipt && <><br /><ReceiptButton receipt={x.receipt} /></>}</td>
+                  <td data-label="Estado"><span className={`pay-status pay-status--${x.status}`}>{paymentStatusLabel[x.status]}</span></td>
                 </tr>
               ))}
             </tbody>

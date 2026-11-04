@@ -79,6 +79,7 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
   const match = groups.find((g) => g[0] === st)![2];
   const shown = props.filter((p) => match(p) && (!type || p.type === type) && (!op || p.operation === op) && (!city || p.city === city)
     && `${p.title} ${p.city} ${p.neighborhood} ${propertyCode(p)}`.toLowerCase().includes(q.toLowerCase()));
+  const page = usePager(shown, `${st}|${q}|${type}|${op}|${city}`);
   const live = props.filter((p) => isLive(p));
   const toL = (p: Property) => (p.currency === "USD" ? p.price * 26.3 : p.price);
   const sale = live.filter((p) => p.operation === "venta");
@@ -112,10 +113,10 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
         <span className="muted small">{plural(shown.length, "resultado", "resultados")}</span>
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <table className="table table--stack">
           <thead><tr><th>Propiedad</th><th>Publica</th><th>Precio</th><th>Estado</th><th className="num">Visitas</th><th className="num">Consultas</th><th aria-label="Acciones" /></tr></thead>
           <tbody>
-            {shown.map((p) => (
+            {page.rows.map((p) => (
               <tr key={p.id}>
                 <td>
                   <div className="t-prop">
@@ -123,9 +124,9 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
                     <div><Link href={`/admin/propiedad?id=${p.id}`} className="t-prop__title">{p.title}</Link><span className="muted small">{propertyCode(p)} · {typeLabel[p.type]} · {p.neighborhood}, {p.city}</span></div>
                   </div>
                 </td>
-                <td className="small">{p.ownerId ? sellers.find((x) => x.id === p.ownerId)?.name ?? "Vendedor" : "Punto Inmobiliario"}<br /><span className="muted">{operationLabel[p.operation]}</span></td>
-                <td className="nowrap">{formatPrice(p)}</td>
-                <td>
+                <td className="small" data-label="Publica">{p.ownerId ? sellers.find((x) => x.id === p.ownerId)?.name ?? "Vendedor" : "Punto Inmobiliario"}<br /><span className="muted">{operationLabel[p.operation]}</span></td>
+                <td className="nowrap" data-label="Precio">{formatPrice(p)}</td>
+                <td data-label="Estado">
                   {p.ownerId && p.status !== "publicada" && p.status !== "pausada" ? (
                     <span className={`pill pill--static ${p.status === "pendiente" ? "pill--accent" : ""}`}>{listingStatusLabel[p.status ?? "borrador"]}</span>
                   ) : (
@@ -138,8 +139,8 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
                   <button className={`pill ${p.featured ? "pill--accent pill--btn" : "pill--ghost"}`} title={p.featured ? "Quitar de destacadas" : "Destacar en la portada"}
                     onClick={async () => { await backend.saveProperty({ ...p, featured: !p.featured }); onChange(); }}>{p.featured ? "★ Destacada" : "☆ Destacar"}</button>
                 </td>
-                <td className="num">{p.views ?? 0}</td>
-                <td className="num">{inq.filter((i) => i.propertyId === p.id).length}</td>
+                <td className="num" data-label="Visitas">{p.views ?? 0}</td>
+                <td className="num" data-label="Consultas">{inq.filter((i) => i.propertyId === p.id).length}</td>
                 <td className="actions">
                   <Link className="icon-btn" href={`/propiedades/${p.slug}`} title="Ver en el sitio"><EyeIcon size={18} /></Link>
                   <Link className="icon-btn" href={`/admin/propiedad?id=${p.id}`} title="Editar"><EditIcon size={18} /></Link>
@@ -154,6 +155,7 @@ function PropertiesTab({ props, inq, sellers, onChange }: { props: Property[]; i
             ))}
           </tbody>
         </table>
+        <ShowMore {...page} />
       </div>
     </>
   );

@@ -175,15 +175,15 @@ export default function AdminSummary({ props, inq, users, payments, sellers, onC
         <section className="panel dash-span-2">
           <div className="panel__head"><h2 className="h3">Propiedades con mejor desempeño</h2><span className="muted small">visitas desde que se publicaron</span></div>
           <div className="table-wrap table-wrap--flat">
-            <table className="table table--compact">
+            <table className="table table--compact table--stack">
               <thead><tr><th>Propiedad</th><th className="num">Visitas</th><th className="num">Consultas</th><th className="num">Conversión</th></tr></thead>
               <tbody>
                 {m.top.map(({ p, views, leads }) => (
                   <tr key={p.id}>
                     <td><div className="t-prop"><img src={p.images[0] ?? "/img/casa-1.svg"} alt="" /><div><Link href={`/propiedades/${p.slug}`} className="t-prop__title">{p.title}</Link><span className="muted small">{typeLabel[p.type]} · {p.city}</span></div></div></td>
-                    <td className="num">{views.toLocaleString("es-HN")}</td>
-                    <td className="num">{leads}</td>
-                    <td className="num">{views ? `${((leads / views) * 100).toFixed(1)}%` : "—"}</td>
+                    <td className="num" data-label="Visitas">{views.toLocaleString("es-HN")}</td>
+                    <td className="num" data-label="Consultas">{leads}</td>
+                    <td className="num" data-label="Conversión">{views ? `${((leads / views) * 100).toFixed(1)}%` : "—"}</td>
                   </tr>
                 ))}
               </tbody>
