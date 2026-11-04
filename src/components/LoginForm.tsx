@@ -13,6 +13,11 @@ export default function LoginForm() {
   const [mode, setMode] = useState<"login" | "registro" | "olvido">(sp.get("modo") === "registro" ? "registro" : "login");
   const [f, setF] = useState({ fullName: "", phone: "", email: "", password: "", businessName: "" });
   const [accountType, setAccountType] = useState<"comprador" | "vendedor">(sp.get("tipo") === "vendedor" ? "vendedor" : "comprador");
+  // Si llega un link a "crear cuenta de vendedor" estando ya en esta página, cambia la pestaña.
+  useEffect(() => {
+    if (sp.get("modo") === "registro") setMode("registro");
+    if (sp.get("tipo") === "vendedor") setAccountType("vendedor");
+  }, [sp]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");

@@ -1017,3 +1017,12 @@ a.kpi:hover { border-color: #c9d6ea; box-shadow: 0 8px 24px rgba(15,30,60,.08); 
   .table--stack tr.row-detail { display: block; background: var(--tint); }
   .table--stack tr.row-detail td { display: block; }
 }
+
+/* Ingreso: panel de beneficios con foto */
+.auth { align-items: stretch; }
+.auth__intro--media { color: #fff; border-radius: 22px; padding: 40px 36px; background-size: cover; background-position: center; box-shadow: 0 30px 60px -32px rgba(8,20,40,.55); }
+.auth__intro--media p { color: rgba(255,255,255,.86); font-size: 1.05rem; }
+.auth__intro--media .h3 { margin-top: 26px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.7); }
+.auth__intro--media .auth__perks li { display: flex; gap: 10px; align-items: flex-start; }
+.auth__intro--media .auth__perks svg { flex-shrink: 0; margin-top: 3px; padding: 3px; width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.18); }
+@media (max-width: 899px) { .auth__intro--media { order: 2; padding: 28px 22px; } }
