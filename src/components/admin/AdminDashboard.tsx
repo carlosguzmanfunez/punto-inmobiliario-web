@@ -141,7 +141,7 @@ function Summary({ props, inq, users, payments, sellers }: { props: Property[]; 
               {expiring.map((e) => (
                 <li key={e.id} className="renew">
                   <div><strong>{e.seller?.name ?? "Vendedor"}</strong><br /><span className="muted small">{e.what} · vence en {daysLeft(e.until)} {daysLeft(e.until) === 1 ? "día" : "días"}</span></div>
-                  {e.seller?.whatsapp && <a className="btn btn--wa btn--sm" target="_blank" rel="noopener noreferrer" href={whatsappTo(e.seller.whatsapp, `Hola ${e.seller.name}, le escribe Punto Inmobiliario Hn. Su plan de "${e.what}" vence en ${daysLeft(e.until)} días. ¿Desea renovarlo para seguir visible?`)}><WhatsAppIcon size={14} /> Avisar</a>}
+                  {e.seller?.whatsapp && <a className="btn btn--wa btn--sm" target="_blank" rel="noopener noreferrer" href={whatsappTo(e.seller.whatsapp, `Hola ${e.seller.name}, le escribe Punto Inmobiliario Hn. Su plan de "${e.what}" vence en ${daysLeft(e.until)} ${daysLeft(e.until) === 1 ? "día" : "días"}. ¿Desea renovarlo para seguir visible?`)}><WhatsAppIcon size={14} /> Avisar</a>}
                 </li>
               ))}
             </ul>

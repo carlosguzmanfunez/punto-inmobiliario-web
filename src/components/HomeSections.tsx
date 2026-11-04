@@ -30,7 +30,7 @@ export function TypeExplorer() {
             {g.types.map((t) => (
               <Link key={t} href={`/propiedades?tipo=${t}`} className="type-tile">
                 <img src={typeImg[t]} alt="" loading="lazy" />
-                <span className="type-tile__label"><strong>{typePlural[t]}</strong><small>{list ? `${count(t)} disponibles` : "…"}</small></span>
+                <span className="type-tile__label"><strong>{typePlural[t]}</strong><small>{list ? `${count(t)} ${count(t) === 1 ? "disponible" : "disponibles"}` : "…"}</small></span>
               </Link>
             ))}
           </div>

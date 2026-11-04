@@ -84,8 +84,8 @@ function Summary({ props, inq, seller, payments, onPay }: { props: Property[]; i
       <div className="stats">
         <div className="stat"><span className="stat__label">Publicaciones activas</span><span className="stat__value">{live.length}</span><span className="stat__hint">{props.length} en total</span></div>
         <div className="stat"><span className="stat__label">Visitas</span><span className="stat__value">{views.toLocaleString("es-HN")}</span><span className="stat__hint">a todas tus propiedades</span></div>
-        <Link href="/panel?tab=consultas" className="stat"><span className="stat__label">Consultas nuevas</span><span className="stat__value">{inq.filter((i) => i.status === "nueva").length}</span><span className="stat__hint">{inq.length} recibidas</span></Link>
-        <Link href="/panel?tab=vitrina" className="stat"><span className="stat__label">Mi vitrina</span><span className="stat__value">{vit ? `${daysLeft(seller?.vitrinaUntil)} días` : "Inactiva"}</span><span className="stat__hint">{vit ? "restantes" : "actívala para tener tu página"}</span></Link>
+        <Link href="/panel?tab=consultas" className="stat"><span className="stat__label">Consultas nuevas</span><span className="stat__value">{inq.filter((i) => i.status === "nueva").length}</span><span className="stat__hint">{inq.length} {inq.length === 1 ? "recibida" : "recibidas"}</span></Link>
+        <Link href="/panel?tab=vitrina" className="stat"><span className="stat__label">Mi vitrina</span><span className="stat__value">{vit ? `${daysLeft(seller?.vitrinaUntil)} ${daysLeft(seller?.vitrinaUntil) === 1 ? "día" : "días"}` : "Inactiva"}</span><span className="stat__hint">{vit ? "restantes" : "actívala para tener tu página"}</span></Link>
       </div>
       {props.length === 0 ? (
         <div className="empty">
@@ -99,7 +99,7 @@ function Summary({ props, inq, seller, payments, onPay }: { props: Property[]; i
             {drafts.length === 0 && expiring.length === 0 ? <p className="muted">Todo al día.</p> : (
               <ul className="todo">
                 {drafts.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">{p.status === "rechazada" ? "Revisa los datos y vuelve a enviarla" : "Lista para publicar"}</span></span><button className="btn btn--primary btn--sm" onClick={() => onPay({ property: p })}>Publicar</button></li>)}
-                {expiring.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">Vence en {daysLeft(p.paidUntil)} días</span></span><button className="btn btn--outline btn--sm" onClick={() => onPay({ property: p })}>Renovar</button></li>)}
+                {expiring.map((p) => <li key={p.id}><span><strong>{p.title}</strong><br /><span className="muted small">Vence en {daysLeft(p.paidUntil)} {daysLeft(p.paidUntil) === 1 ? "día" : "días"}</span></span><button className="btn btn--outline btn--sm" onClick={() => onPay({ property: p })}>Renovar</button></li>)}
               </ul>
             )}
           </div>

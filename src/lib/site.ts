@@ -1,6 +1,8 @@
 // Configuración general del sitio. Cambia aquí el número de WhatsApp y los datos de contacto.
 export const site = {
   name: "Punto Inmobiliario Hn",
+  // Dominio público (para links compartidos, mapa del sitio y vistas previas en WhatsApp).
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://puntoinmobiliariohn.com").replace(/\/$/, ""),
   shortName: "Punto Inmobiliario",
   tagline: "Tu punto de encuentro para comprar, alquilar y vender en Honduras",
   // Número en formato internacional sin "+" ni espacios.

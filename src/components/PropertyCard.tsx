@@ -43,7 +43,7 @@ export default function PropertyCard({ p, layout = "grid" }: { p: Property; layo
         <p className="card__title">{p.title}</p>
         <p className="card__facts">
           {p.bedrooms > 0 && <span><BedIcon size={15} /> {p.bedrooms} hab.</span>}
-          {p.bathrooms > 0 && <span><BathIcon size={15} /> {p.bathrooms} baños</span>}
+          {p.bathrooms > 0 && <span><BathIcon size={15} /> {p.bathrooms} {p.bathrooms === 1 ? "baño" : "baños"}</span>}
           {p.parking > 0 && <span><CarIcon size={15} /> {p.parking}</span>}
           <span><AreaIcon size={15} /> {p.areaM2 > 0 ? `${p.areaM2.toLocaleString("es-HN")} m²` : `${p.lotM2?.toLocaleString("es-HN") ?? 0} m² de terreno`}</span>
         </p>

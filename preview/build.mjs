@@ -14,7 +14,7 @@ function require_resolve(p) { for (const e of [".tsx", ".ts", "/index.ts", ""]) 
 const r = await build({
   entryPoints: [path.join(root, "preview/main.tsx")], bundle: true, minify: true, write: false, format: "iife",
   jsx: "automatic", plugins: [shim], loader: { ".css": "empty" },
-  define: { "process.env.NEXT_PUBLIC_SUPABASE_URL": "undefined", "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY": "undefined", "process.env.NODE_ENV": '"production"' },
+  define: { "process.env.NEXT_PUBLIC_SUPABASE_URL": "undefined", "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY": "undefined", "process.env.NEXT_PUBLIC_SITE_URL": "undefined", "process.env.NODE_ENV": '"production"' },
 });
 let js = r.outputFiles[0].text.replaceAll('"/img/', '"img/').replaceAll("`/img/", "`img/");
 writeFileSync(path.join(out, "app.js"), js);

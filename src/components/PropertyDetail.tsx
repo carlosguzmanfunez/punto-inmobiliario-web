@@ -61,8 +61,11 @@ export default function PropertyDetail({ slug }: { slug: string }) {
   const area = p.areaM2 || p.lotM2 || 0;
   const perM2 = p.operation === "venta" && area > 0 ? formatMoney(p.price / area, p.currency) : "";
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.neighborhood}, ${p.city}, Honduras`)}`;
-  const similar = (list ?? []).filter((x) => x.id !== p.id && (x.city === p.city || x.type === p.type))
-    .sort((a, b) => Number(b.city === p.city && b.type === p.type) - Number(a.city === p.city && a.type === p.type)).slice(0, 4);
+  // Similares: misma operación primero, luego mismo tipo, misma ciudad y precio parecido.
+  const score = (x: Property) => (x.operation === p.operation ? 8 : 0) + (x.type === p.type ? 4 : 0) + (x.city === p.city ? 2 : 0)
+    + (x.currency === p.currency && Math.abs(x.price - p.price) <= p.price * 0.4 ? 1 : 0);
+  const similar = (list ?? []).filter((x) => x.id !== p.id && x.operation === p.operation && (x.city === p.city || x.type === p.type || score(x) >= 9))
+    .sort((a, b) => score(b) - score(a)).slice(0, 4);
 
   const details: [string, string][] = [
     ["Código", code],
@@ -121,8 +124,8 @@ export default function PropertyDetail({ slug }: { slug: string }) {
           <div className="detail__main">
             <div className="detail__facts">
               <span className="fact"><strong>{typeLabel[p.type]}</strong> {p.operation === "venta" ? "en venta" : "en alquiler"}</span>
-              {p.bedrooms > 0 && <span className="fact"><BedIcon /> {p.bedrooms} habitaciones</span>}
-              {p.bathrooms > 0 && <span className="fact"><BathIcon /> {p.bathrooms} baños</span>}
+              {p.bedrooms > 0 && <span className="fact"><BedIcon /> {p.bedrooms} {p.bedrooms === 1 ? "habitación" : "habitaciones"}</span>}
+              {p.bathrooms > 0 && <span className="fact"><BathIcon /> {p.bathrooms} {p.bathrooms === 1 ? "baño" : "baños"}</span>}
               {p.parking > 0 && <span className="fact"><CarIcon /> {p.parking} parqueos</span>}
               {p.areaM2 > 0 && <span className="fact"><AreaIcon /> {p.areaM2.toLocaleString("es-HN")} m²</span>}
               {p.lotM2 ? <span className="fact"><AreaIcon /> {p.lotM2.toLocaleString("es-HN")} m² de terreno</span> : null}

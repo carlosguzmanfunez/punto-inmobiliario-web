@@ -8,6 +8,8 @@ import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
+  openGraph: { siteName: site.name, locale: "es_HN", type: "website", images: ["/img/hero.svg"] },
   title: { default: `${site.name} | Casas, apartamentos y terrenos en Honduras`, template: `%s | ${site.name}` },
   description: "Compra, alquila o vende casas, apartamentos y terrenos en Tegucigalpa, San Pedro Sula y toda Honduras. Atención a hondureños en el extranjero y asesoría de financiamiento.",
 };
