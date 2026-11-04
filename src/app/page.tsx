@@ -1,6 +1,6 @@
 import Link from "next/link";
 import HeroSearch from "@/components/HeroSearch";
-import FeaturedProperties from "@/components/FeaturedProperties";
+import FeaturedProperties, { RecentlyViewed } from "@/components/FeaturedProperties";
 import { CityExplorer, ProjectsBlock, PublishLead, PublishSteps, TypeExplorer } from "@/components/HomeSections";
 import { guides } from "@/data/guides";
 import { whatsappLink } from "@/lib/site";
@@ -41,6 +41,7 @@ export default function Home() {
         </div>
         <FeaturedProperties />
       </section>
+      <RecentlyViewed />
 
       <section className="section section--tint">
         <div className="container">

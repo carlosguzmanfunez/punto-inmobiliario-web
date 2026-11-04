@@ -17,6 +17,7 @@ import Price from "./Price";
 import PropertyCard from "./PropertyCard";
 import { CompareButton } from "./Compare";
 import { useProperties } from "./useProperties";
+import { usePrefs } from "./PrefsProvider";
 import { AreaIcon, BathIcon, BedIcon, CarIcon, CheckIcon, GlobeIcon, MapIcon, PinIcon, PrintIcon, WhatsAppIcon } from "./Icons";
 
 export default function PropertyDetail({ slug }: { slug: string }) {
@@ -24,6 +25,7 @@ export default function PropertyDetail({ slug }: { slug: string }) {
   const { list } = useProperties();
   const [p, setP] = useState<Property | null | undefined>(undefined);
   const [seller, setSeller] = useState<Seller | null>(null);
+  const { addRecent } = usePrefs();
 
   useEffect(() => {
     let alive = true;
@@ -32,10 +34,10 @@ export default function PropertyDetail({ slug }: { slug: string }) {
       if (!alive) return;
       setP(x);
       if (x?.ownerId) backend.getSeller(x.ownerId).then((s) => alive && setSeller(s)).catch(() => {});
-      if (x && isLive(x)) backend.recordView(x.id).catch(() => {});
+      if (x && isLive(x)) { backend.recordView(x.id).catch(() => {}); addRecent(x.id); }
     });
     return () => { alive = false; };
-  }, [backend, slug]);
+  }, [backend, slug, addRecent]);
 
   useEffect(() => { if (p) document.title = `${p.title} | ${site.name}`; }, [p]);
 

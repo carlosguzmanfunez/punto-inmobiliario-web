@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { downloadCsv, today } from "@/lib/csv";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatPrice, isLive, listingStatusLabel, operationLabel, typeLabel, type Property } from "@/data/properties";
@@ -265,6 +266,7 @@ function InquiriesTab({ inq, onChange }: { inq: Inquiry[]; onChange: () => void 
         <select className="kind-select" value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Tipo de consulta">
           {kinds.map(([k, l, f]) => <option key={k} value={k}>{l} ({inq.filter(f).length})</option>)}
         </select>
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`consultas-${today()}.csv`, ["Fecha", "Nombre", "Correo", "WhatsApp", "Propiedad", "Mensaje", "Estado"], shown.map((i) => [i.createdAt.slice(0, 10), i.name, i.email, i.phone, i.propertyTitle ?? "", i.message, statusLabel[i.status]]))}>Descargar Excel</button>
       </div>
       <div className="seg">
         {(["", "nueva", "en_proceso", "cerrada"] as const).map((s) => (
@@ -311,7 +313,9 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
   const [err, setErr] = useState("");
   return (
     <>
-      <div className="admin__title"><h1 className="h2">Usuarios <span className="muted">({users.length})</span></h1></div>
+      <div className="admin__title"><h1 className="h2">Usuarios <span className="muted">({users.length})</span></h1>
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`usuarios-${today()}.csv`, ["Nombre", "Correo", "Teléfono", "Rol", "Registro", "Favoritos", "Consultas", "Publicaciones"], users.map((u) => [u.fullName, u.email, u.phone, roleLabel[u.role], u.createdAt.slice(0, 10), u.favorites, u.inquiries, u.properties]))}>Descargar Excel</button>
+      </div>
       {err && <p className="form__error">{err}</p>}
       <div className="table-wrap">
         <table className="table">
@@ -350,7 +354,9 @@ function PaymentsTab({ payments, onChange }: { payments: Payment[]; onChange: ()
   const act = async (fn: () => Promise<void>) => { setErr(""); try { await fn(); onChange(); } catch (e) { setErr((e as Error).message); } };
   return (
     <>
-      <div className="admin__title"><h1 className="h2">Pagos</h1></div>
+      <div className="admin__title"><h1 className="h2">Pagos</h1>
+        <button type="button" className="btn btn--outline btn--sm" onClick={() => downloadCsv(`pagos-${today()}.csv`, ["Fecha", "Vendedor", "Plan", "Propiedad", "Monto (L)", "Referencia", "Estado", "Confirmado"], payments.map((x) => [x.createdAt.slice(0, 10), x.sellerName ?? "", plans[x.kind].name, x.kind === "vitrina" ? "Vitrina" : x.propertyTitle ?? "", x.amount, x.reference, paymentStatusLabel[x.status], x.confirmedAt?.slice(0, 10) ?? ""]))}>Descargar Excel</button>
+      </div>
       <div className="seg">
         <button className={filter === "pendiente" ? "is-active" : ""} onClick={() => setFilter("pendiente")}>Por confirmar <span className="count">{payments.filter((x) => x.status === "pendiente").length}</span></button>
         <button className={filter === "" ? "is-active" : ""} onClick={() => setFilter("")}>Todos <span className="count">{payments.length}</span></button>
