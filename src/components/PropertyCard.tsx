@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { typeLabel, type Property } from "@/data/properties";
-import { AreaIcon, BathIcon, BedIcon, CarIcon } from "./Icons";
+import { AreaIcon, BathIcon, BedIcon, CalendarIcon, CarIcon, CheckIcon } from "./Icons";
 import FavoriteButton from "./FavoriteButton";
 import Price from "./Price";
 import { CompareButton } from "./Compare";
@@ -11,6 +11,7 @@ export default function PropertyCard({ p, layout = "grid" }: { p: Property; layo
   const href = `/propiedades/${p.slug}`;
   const images = p.images.length ? p.images : ["/img/casa-1.svg"];
   const furnished = p.features.some((f) => f.toLowerCase() === "amueblado");
+  const list = layout === "list";
   return (
     <article className={`card${layout === "list" ? " card--list" : ""}`}>
       <div className="card__media">
@@ -47,8 +48,18 @@ export default function PropertyCard({ p, layout = "grid" }: { p: Property; layo
           {p.parking > 0 && <span><CarIcon size={15} /> {p.parking}</span>}
           <span><AreaIcon size={15} /> {p.areaM2 > 0 ? `${p.areaM2.toLocaleString("es-HN")} m²` : `${p.lotM2?.toLocaleString("es-HN") ?? 0} m² de terreno`}</span>
         </p>
+        {list && <p className="card__desc">{p.description}</p>}
+        {list && p.features.length > 0 && (
+          <ul className="card__features">{p.features.slice(0, 4).map((f) => <li key={f}><CheckIcon size={13} /> {f}</li>)}</ul>
+        )}
         <Price p={p} className="card__price" />
       </Link>
+      {list && (
+        <div className="card__actions">
+          <Link className="btn btn--primary btn--sm" href={href}>Ver detalles</Link>
+          <Link className="btn btn--outline btn--sm" href={`${href}#contacto`}><CalendarIcon size={15} /> Agendar visita</Link>
+        </div>
+      )}
     </article>
   );
 }
