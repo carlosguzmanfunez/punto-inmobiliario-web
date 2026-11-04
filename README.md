@@ -16,6 +16,7 @@ node preview/build.mjs <carpeta>   # vista previa de una sola página (modo demo
   ```
   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+  NEXT_PUBLIC_SITE_URL=https://tudominio.com
   ```
   y aplica `supabase/schema.sql` en el SQL Editor. Para volverte administrador:
   `insert into admin_emails values ('tu@correo.com');` antes de registrarte, o
@@ -41,10 +42,12 @@ Los precios de los planes están en `src/lib/site.ts` (`plans`). La base de dato
 - `/panel`: panel del vendedor (propiedades, consultas, vitrina, planes y pagos).
 - `/vender`: página de planes y precios para vendedores.
 - `/vendedores/<slug>`: vitrina pública del vendedor.
-- `/admin`: resumen e ingresos, propiedades, pagos, vendedores, consultas y usuarios.
+- `/admin`: resumen con renovaciones e ingresos por plan, propiedades (aprobar, destacar), pagos, vendedores, consultas, usuarios y precios y ajustes.
+- `/comparar`, `/proyectos`, `/guias`, `/servicios`: comparador, desarrolladores, guías y servicios.
 
 ## Dónde cambiar cosas
-- `src/lib/site.ts`: número de WhatsApp, correo, horario, menú y precios de los planes.
+- `src/lib/site.ts`: número de WhatsApp, correo, horario, menú y precios iniciales de los planes.
+- Precios de los planes, tipo de cambio y datos bancarios: desde el panel, en `/admin?tab=ajustes`.
 - `src/lib/backend/`: conexión a datos (`supabase.ts` y `demo.ts`).
 - `src/data/properties.ts`: tipos y propiedades iniciales.
 - `src/app/globals.css`: colores y estilos.
