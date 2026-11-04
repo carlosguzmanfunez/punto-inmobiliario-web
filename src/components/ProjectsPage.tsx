@@ -7,6 +7,8 @@ import { useAuth, usePlans } from "./AuthProvider";
 import { useProperties } from "./useProperties";
 import PropertyCard from "./PropertyCard";
 import { BuildingIcon, CheckIcon, WhatsAppIcon } from "./Icons";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 // Directorio público de vendedores con vitrina vigente y sus propiedades.
 export default function ProjectsPage() {
@@ -19,11 +21,14 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow"><BuildingIcon size={16} /> Proyectos</span>
-          <h1>Proyectos y desarrolladores</h1>
-          <p>Constructoras, desarrolladores y vendedores con su propia vitrina en Punto Inmobiliario. Conoce sus proyectos y escríbeles directo.</p>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow"><BuildingIcon size={16} /> Proyectos</span>
+            <h1>Proyectos y desarrolladores</h1>
+            <p>Constructoras, desarrolladores y vendedores con su propia vitrina en Punto Inmobiliario. Conoce sus proyectos y escríbeles directo.</p>
+          </div>
+          <PageHeroMedia src={photos.torre} icon={<BuildingIcon size={20} />} title="Vitrinas verificadas" text="Cada constructora con su propio link" />
         </div>
       </section>
       <section className="section container">

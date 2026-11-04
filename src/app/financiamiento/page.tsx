@@ -1,6 +1,8 @@
 import { whatsappLink } from "@/lib/site";
-import { WhatsAppIcon } from "@/components/Icons";
+import { BankIcon, WhatsAppIcon } from "@/components/Icons";
 import MortgageCalc from "@/components/MortgageCalc";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 export const metadata = { title: "Financiamiento" };
 
@@ -18,11 +20,14 @@ const DOWN = 0.1;
 export default function FinancingPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Financiamiento</span>
-          <h1>Tu casa propia, con una cuota que sí puedes pagar</h1>
-          <p>Te orientamos para comparar préstamos de bancos y cooperativas, y preparar tus documentos sin costo adicional.</p>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow">Financiamiento</span>
+            <h1>Tu casa propia, con una cuota que sí puedes pagar</h1>
+            <p>Te orientamos para comparar préstamos de bancos y cooperativas, y preparar tus documentos sin costo adicional.</p>
+          </div>
+          <PageHeroMedia src={photos.casaFamiliar} icon={<BankIcon size={20} />} title="Bancos y cooperativas" text="Te ayudamos a comparar opciones" />
         </div>
       </section>
       <section id="calculadora" className="section container">

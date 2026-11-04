@@ -12,6 +12,7 @@ import { useAuth, usePlans } from "../AuthProvider";
 import { EditIcon, EyeIcon, PlusIcon, TrashIcon, WhatsAppIcon } from "../Icons";
 import AdminShell, { type AdminTab } from "./AdminShell";
 import AdminSummary from "./AdminSummary";
+import { ShowMore, usePager } from "./ShowMore";
 import ClientsTab, { countryOf } from "./ClientsTab";
 import { ColumnChart, type Col } from "./Charts";
 
@@ -229,6 +230,7 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
   const DAY = 864e5;
   const shown = users.filter((u) => (!role || u.role === role) && `${u.fullName} ${u.email} ${u.phone}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const page = usePager(shown, `${role}|${q}`);
   const newMonth = users.filter((u) => Date.now() - new Date(u.createdAt).getTime() < 30 * DAY).length;
   const active = users.filter((u) => u.favorites + u.inquiries + u.properties > 0).length;
   // Registros por semana en las últimas 12 semanas.
@@ -264,18 +266,18 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
         <input className="admin__search" type="search" placeholder="Buscar por nombre, correo o teléfono" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <div className="table-wrap">
-        <table className="table">
+        <table className="table table--stack">
           <thead><tr><th>Nombre</th><th>País</th><th>Registro</th><th className="num">Favoritos</th><th className="num">Consultas</th><th className="num">Publicaciones</th><th>Rol</th></tr></thead>
           <tbody>
-            {shown.map((u) => (
+            {page.rows.map((u) => (
               <tr key={u.id}>
                 <td><div className="t-person"><span className="avatar">{(u.fullName || u.email).slice(0, 1).toUpperCase()}</span><div><strong>{u.fullName || "Sin nombre"}</strong>{u.id === meId && <span className="muted small"> (tú)</span>}<br /><span className="muted small">{u.email}</span><br /><span className="muted small nowrap">{u.phone}</span></div></div></td>
-                <td className="small">{countryOf(u.phone) !== "Honduras" ? <span className="tag-abroad">{countryOf(u.phone)}</span> : "Honduras"}</td>
-                <td className="nowrap small">{formatDate(u.createdAt)}</td>
-                <td className="num">{u.favorites}</td>
-                <td className="num">{u.inquiries}</td>
-                <td className="num">{u.properties}</td>
-                <td>
+                <td className="small" data-label="País">{countryOf(u.phone) !== "Honduras" ? <span className="tag-abroad">{countryOf(u.phone)}</span> : "Honduras"}</td>
+                <td className="nowrap small" data-label="Registro">{formatDate(u.createdAt)}</td>
+                <td className="num" data-label="Favoritos">{u.favorites}</td>
+                <td className="num" data-label="Consultas">{u.inquiries}</td>
+                <td className="num" data-label="Publicaciones">{u.properties}</td>
+                <td data-label="Rol">
                   <select value={u.role} disabled={u.id === meId} aria-label="Rol"
                     onChange={async (e) => { setErr(""); try { await backend.setUserRole(u.id, e.target.value as Role); onChange(); } catch (x) { setErr((x as Error).message); } }}>
                     {(Object.keys(roleLabel) as Role[]).map((r) => <option key={r} value={r}>{roleLabel[r]}</option>)}
@@ -285,6 +287,7 @@ function UsersTab({ users, meId, onChange }: { users: UserRow[]; meId: string; o
             ))}
           </tbody>
         </table>
+        <ShowMore {...page} />
       </div>
       <p className="muted small">Los compradores guardan favoritos y envían consultas. Los vendedores publican sus propiedades pagando un plan. Los administradores ven este panel.</p>
     </>

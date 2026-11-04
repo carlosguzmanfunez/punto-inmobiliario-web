@@ -1,5 +1,7 @@
 import { whatsappLink } from "@/lib/site";
 import { BankIcon, GlobeIcon, ShieldIcon, VideoIcon, WhatsAppIcon } from "@/components/Icons";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 export const metadata = { title: "Clientes en el extranjero" };
 
@@ -13,12 +15,15 @@ const faqs = [
 export default function AbroadPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow"><GlobeIcon size={16} /> Hondureños en el extranjero</span>
-          <h1>Invierte en tu tierra, estés donde estés</h1>
-          <p>Te acompañamos en cada paso para comprar casa, apartamento o terreno en Honduras desde Estados Unidos, España, Canadá o cualquier país.</p>
-          <a className="btn btn--wa btn--lg" href={whatsappLink("Hola, vivo fuera de Honduras y quiero comprar una propiedad.")} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={20} /> Agendar videollamada</a>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow"><GlobeIcon size={16} /> Hondureños en el extranjero</span>
+            <h1>Invierte en tu tierra, estés donde estés</h1>
+            <p>Te acompañamos en cada paso para comprar casa, apartamento o terreno en Honduras desde Estados Unidos, España, Canadá o cualquier país.</p>
+            <a className="btn btn--wa btn--lg" href={whatsappLink("Hola, vivo fuera de Honduras y quiero comprar una propiedad.")} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={20} /> Agendar videollamada</a>
+          </div>
+          <PageHeroMedia src={photos.resortPlaya} icon={<VideoIcon size={20} />} title="Recorrido por videollamada" text="Conoce la propiedad sin viajar" />
         </div>
       </section>
       <section className="section container">

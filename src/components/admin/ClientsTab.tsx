@@ -6,6 +6,7 @@ import { formatDate, statusLabel } from "@/lib/labels";
 import { downloadCsv, today } from "@/lib/csv";
 import { plural, whatsappTo } from "@/lib/site";
 import { MailIcon, WhatsAppIcon } from "../Icons";
+import { ShowMore, usePager } from "./ShowMore";
 
 const DAY = 864e5;
 export const countryOf = (phone: string) => {
@@ -53,6 +54,7 @@ export default function ClientsTab({ inq, users }: { inq: Inquiry[]; users: User
   ];
   const match = filters.find((x) => x[0] === f)![2];
   const shown = clients.filter((c) => match(c) && `${c.name} ${c.email} ${c.phone}`.toLowerCase().includes(q.toLowerCase()));
+  const page = usePager(shown, `${f}|${q}`);
   const month = Date.now() - 30 * DAY;
   const newMonth = clients.filter((c) => new Date(c.first).getTime() > month).length;
   const abroad = clients.filter((c) => c.country !== "Honduras").length;
@@ -77,16 +79,16 @@ export default function ClientsTab({ inq, users }: { inq: Inquiry[]; users: User
       </div>
       {shown.length === 0 ? <div className="empty"><p>No hay clientes con ese filtro.</p></div> : (
         <div className="table-wrap">
-          <table className="table">
+          <table className="table table--stack">
             <thead><tr><th>Cliente</th><th>País</th><th className="num">Consultas</th><th>Último contacto</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
             <tbody>
-              {shown.map((c) => (
+              {page.rows.map((c) => (
                 <Fragment key={c.key}>
                   <tr className="row-click" onClick={() => setOpen(open === c.key ? null : c.key)}>
                     <td><div className="t-person"><span className="avatar">{c.name.slice(0, 1)}</span><div><strong>{c.name}</strong>{c.registered && <span className="tag-soft">Con cuenta</span>}<br /><span className="muted small">{c.email}</span><br /><span className="muted small nowrap">{c.phone}</span></div></div></td>
-                    <td className="small">{c.country !== "Honduras" ? <span className="tag-abroad">{c.country}</span> : "Honduras"}</td>
-                    <td className="num">{c.inquiries.length}</td>
-                    <td className="nowrap small">{formatDate(c.last)}</td>
+                    <td className="small" data-label="País">{c.country !== "Honduras" ? <span className="tag-abroad">{c.country}</span> : "Honduras"}</td>
+                    <td className="num" data-label="Consultas">{c.inquiries.length}</td>
+                    <td className="nowrap small" data-label="Último contacto">{formatDate(c.last)}</td>
                     <td><span className={`status status--${c.status}`}>{statusLabel[c.status]}</span></td>
                     <td className="actions" onClick={(e) => e.stopPropagation()}>
                       {c.phone && <a className="btn btn--wa btn--sm" target="_blank" rel="noopener noreferrer" href={whatsappTo(c.phone, `Hola ${c.name.split(" ")[0]}, le saluda Punto Inmobiliario Hn.`)}><WhatsAppIcon size={14} /> WhatsApp</a>}
@@ -106,6 +108,7 @@ export default function ClientsTab({ inq, users }: { inq: Inquiry[]; users: User
               ))}
             </tbody>
           </table>
+          <ShowMore {...page} />
         </div>
       )}
       <p className="muted small">Toca un cliente para ver todas sus consultas. Los clientes se agrupan por correo o teléfono.</p>

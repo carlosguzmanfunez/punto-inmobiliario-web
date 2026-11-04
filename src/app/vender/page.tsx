@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { plans, whatsappLink } from "@/lib/site";
 import PlansGrid from "@/components/PlansGrid";
-import { WhatsAppIcon } from "@/components/Icons";
+import { LinkIcon, WhatsAppIcon } from "@/components/Icons";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 export const metadata = { title: "Vende o alquila tu propiedad" };
 
@@ -17,15 +19,18 @@ const faqs = [
 export default function SellPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Para vendedores, corredores y desarrolladores</span>
-          <h1>Publica tu propiedad con un link profesional</h1>
-          <p>Sube tus fotos, arma una publicación que genera confianza y envíala a tus compradores por WhatsApp. Nosotros te traemos más interesados.</p>
-          <div className="hero-ctas">
-            <Link className="btn btn--primary btn--lg" href={signup}>Crear cuenta de vendedor</Link>
-            <a className="btn btn--outline btn--lg" href={whatsappLink("Hola, quiero publicar mi propiedad con Punto Inmobiliario Hn.")} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={20} /> Hablar con un asesor</a>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow">Para vendedores, corredores y desarrolladores</span>
+            <h1>Publica tu propiedad con un link profesional</h1>
+            <p>Sube tus fotos, arma una publicación que genera confianza y envíala a tus compradores por WhatsApp. Nosotros te traemos más interesados.</p>
+            <div className="hero-ctas">
+              <Link className="btn btn--primary btn--lg" href={signup}>Crear cuenta de vendedor</Link>
+              <a className="btn btn--outline btn--lg" href={whatsappLink("Hola, quiero publicar mi propiedad con Punto Inmobiliario Hn.")} target="_blank" rel="noopener noreferrer"><WhatsAppIcon size={20} /> Hablar con un asesor</a>
+            </div>
           </div>
+          <PageHeroMedia src={photos.salaModerna} icon={<LinkIcon size={20} />} title="Link profesional" text="Listo para enviar por WhatsApp" />
         </div>
       </section>
 

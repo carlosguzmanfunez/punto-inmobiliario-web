@@ -1,15 +1,21 @@
 import { site } from "@/lib/site";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
+import { ShieldIcon } from "@/components/Icons";
 
 export const metadata = { title: "Quiénes somos" };
 
 export default function AboutPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Quiénes somos</span>
-          <h1>Somos tu punto de encuentro inmobiliario en Honduras</h1>
-          <p>{site.name} nace para que comprar, vender o alquilar una propiedad sea claro, seguro y cercano.</p>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow">Quiénes somos</span>
+            <h1>Somos tu punto de encuentro inmobiliario en Honduras</h1>
+            <p>{site.name} nace para que comprar, vender o alquilar una propiedad sea claro, seguro y cercano.</p>
+          </div>
+          <PageHeroMedia src={photos.ciudad} icon={<ShieldIcon size={20} />} title="Propiedades verificadas" text="Revisamos cada publicación" />
         </div>
       </section>
       <section className="section container narrow prose">

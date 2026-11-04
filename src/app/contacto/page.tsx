@@ -1,17 +1,22 @@
 import { site, whatsappLink } from "@/lib/site";
 import { MailIcon, PinIcon, WhatsAppIcon } from "@/components/Icons";
 import InquiryForm from "@/components/InquiryForm";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 export const metadata = { title: "Contacto" };
 
 export default function ContactPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Contacto</span>
-          <h1>Estamos para ayudarte</h1>
-          <p>Escríbenos por el canal que prefieras. Respondemos {site.hours.toLowerCase()}.</p>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow">Contacto</span>
+            <h1>Estamos para ayudarte</h1>
+            <p>Escríbenos por el canal que prefieras. Respondemos {site.hours.toLowerCase()}.</p>
+          </div>
+          <PageHeroMedia src={photos.oficinaAbierta} icon={<WhatsAppIcon size={20} />} title="Atención por WhatsApp" text="Te responde una persona, no un robot" />
         </div>
       </section>
       <section className="section container">

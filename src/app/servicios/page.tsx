@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { whatsappLink } from "@/lib/site";
 import { BankIcon, CameraIcon, FileIcon, KeyIcon, MapIcon, VideoIcon, WhatsAppIcon } from "@/components/Icons";
+import PageHeroMedia from "@/components/PageHeroMedia";
+import { photos } from "@/data/photos";
 
 export const metadata = { title: "Servicios" };
 
@@ -16,11 +18,14 @@ const services = [
 export default function ServicesPage() {
   return (
     <>
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">Servicios</span>
-          <h1>Todo lo que tu propiedad necesita</h1>
-          <p>Además de publicar, te ayudamos a presentar, valorar y cerrar con seguridad. Cotiza cada servicio por WhatsApp.</p>
+      <section className="page-hero page-hero--media">
+        <div className="container page-hero__grid">
+          <div className="page-hero__text">
+            <span className="eyebrow">Servicios</span>
+            <h1>Todo lo que tu propiedad necesita</h1>
+            <p>Además de publicar, te ayudamos a presentar, valorar y cerrar con seguridad. Cotiza cada servicio por WhatsApp.</p>
+          </div>
+          <PageHeroMedia src={photos.casaModernaPiscina} icon={<CameraIcon size={20} />} title="Fotos, video y dron" text="Presenta tu propiedad como se merece" />
         </div>
       </section>
       <section className="section container">
