@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { cities, listingStatusLabel, slugify, typeLabel, type Property } from "@/data/properties";
+import { amenities, listingStatusLabel, slugify, typeLabel, type Property } from "@/data/properties";
+import { allCities, departmentOf, departments } from "@/data/geo";
 import type { PropertyInput } from "@/lib/backend";
 import { useAuth } from "../AuthProvider";
 import { CloseIcon, ImageIcon } from "../Icons";
@@ -100,8 +101,9 @@ export default function PropertyEditor({ mode = "admin" }: { mode?: "admin" | "s
                   </span>
                 </label>
               </div>
-              <div className="grid-2">
-                <label>Ciudad<input list="city-list" required value={p.city} onChange={(e) => set("city", e.target.value)} /><datalist id="city-list">{cities.map((c) => <option key={c} value={c} />)}</datalist></label>
+              <div className="grid-3">
+                <label>Ciudad<input list="city-list" required value={p.city} onChange={(e) => { const c = e.target.value; setP((x) => (x ? { ...x, city: c, department: departmentOf(c) || x.department } : x)); }} /><datalist id="city-list">{allCities.map((c) => <option key={c} value={c} />)}</datalist></label>
+                <label>Departamento<select value={p.department || departmentOf(p.city)} onChange={(e) => set("department", e.target.value)}><option value="">Elegir…</option>{departments.map((d) => <option key={d} value={d}>{d}</option>)}</select></label>
                 <label>Colonia, residencial o zona<input required value={p.neighborhood} onChange={(e) => set("neighborhood", e.target.value)} /></label>
               </div>
             </fieldset>
@@ -141,7 +143,18 @@ export default function PropertyEditor({ mode = "admin" }: { mode?: "admin" | "s
                 {!isLand && <label>Parqueos<input type="number" min={0} value={p.parking || ""} onChange={(e) => set("parking", num(e.target.value))} /></label>}
               </div>
               <label>Descripción<textarea rows={5} required value={p.description} onChange={(e) => set("description", e.target.value)} /></label>
-              <label>Lo que ofrece (una por línea)<textarea rows={4} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} placeholder={"Seguridad 24/7\nCisterna\nPlanta eléctrica"} /></label>
+              <div>
+                <p className="f-label">Amenidades (toca para agregar o quitar)</p>
+                <div className="amenity-chips">
+                  {amenities.map((a) => {
+                    const lines = featuresText.split(/\n|,/).map((x) => x.trim()).filter(Boolean);
+                    const on = lines.some((x) => x.toLowerCase() === a.toLowerCase());
+                    return <button key={a} type="button" className={`amenity-chip${on ? " is-on" : ""}`} aria-pressed={on}
+                      onClick={() => setFeaturesText((on ? lines.filter((x) => x.toLowerCase() !== a.toLowerCase()) : [...lines, a]).join("\n"))}>{a}</button>;
+                  })}
+                </div>
+              </div>
+              <label>Lo que ofrece (una por línea, puedes agregar otras)<textarea rows={4} value={featuresText} onChange={(e) => setFeaturesText(e.target.value)} placeholder={"Seguridad 24/7\nCisterna\nPlanta eléctrica"} /></label>
             </fieldset>
           </div>
 

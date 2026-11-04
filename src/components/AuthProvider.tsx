@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { getBackend, type Backend, type Profile } from "@/lib/backend";
+import { PrefsProvider } from "./PrefsProvider";
 
 type Ctx = {
   backend: Backend;
@@ -43,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return added ? ("added" as const) : ("removed" as const);
   }, [backend, profile]);
 
-  return <AuthContext.Provider value={{ backend, profile, loading, favorites, toggleFavorite, refresh }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ backend, profile, loading, favorites, toggleFavorite, refresh }}><PrefsProvider>{children}</PrefsProvider></AuthContext.Provider>;
 }
 
 export function useAuth() {

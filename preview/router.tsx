@@ -1,10 +1,12 @@
 // Enrutador mínimo por "#" para la vista previa (reemplaza next/link y next/navigation).
 import { useEffect, useState } from "react";
 
+// "#/vender?x=1#planes" → ruta /vender, query x=1, ancla planes.
 const read = () => {
-  const h = location.hash.replace(/^#/, "") || "/";
+  const raw = location.hash.replace(/^#/, "") || "/";
+  const [h, anchor = ""] = raw.split("#");
   const [path, query = ""] = h.split("?");
-  return { path: path.replace(/\/$/, "") || "/", query };
+  return { path: path.replace(/\/$/, "") || "/", query, anchor };
 };
 
 export function useLocation() {

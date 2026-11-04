@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { CompareBar } from "@/components/Compare";
 import { site } from "@/lib/site";
 import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Header />
           <main>{children}</main>
           <Footer />
+          <CompareBar />
           <WhatsAppButton />
         </AuthProvider>
       </body>

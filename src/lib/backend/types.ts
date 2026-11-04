@@ -68,6 +68,9 @@ export type Payment = {
   confirmedAt: string | null;
 };
 
+// Búsqueda guardada por un comprador: el texto de la URL de /propiedades.
+export type SavedSearch = { id: string; name: string; query: string; createdAt: string };
+
 export type PropertyInput = Omit<Property, "id" | "views" | "createdAt"> & { id?: string };
 
 export type UserRow = Profile & { favorites: number; inquiries: number; properties: number };
@@ -100,6 +103,8 @@ export interface Backend {
   getSellerBySlug(slug: string): Promise<Seller | null>;
   saveMySeller(d: Pick<Seller, "slug" | "name" | "bio" | "whatsapp" | "city" | "logo">): Promise<Seller>;
   listSellers(): Promise<Seller[]>;
+  // Vendedores con vitrina vigente (página pública de proyectos).
+  listVitrinas(): Promise<Seller[]>;
 
   // Pagos de planes.
   requestPayment(d: { kind: PlanKind; propertyId: string | null; reference: string }): Promise<void>;
@@ -107,6 +112,10 @@ export interface Backend {
   listPayments(): Promise<Payment[]>;
   confirmPayment(id: string): Promise<void>;
   rejectPayment(id: string): Promise<void>;
+
+  listSavedSearches(): Promise<SavedSearch[]>;
+  saveSearch(d: { name: string; query: string }): Promise<void>;
+  deleteSavedSearch(id: string): Promise<void>;
 
   listFavoriteIds(): Promise<string[]>;
   toggleFavorite(propertyId: string): Promise<boolean>;

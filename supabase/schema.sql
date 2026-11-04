@@ -110,10 +110,11 @@ create table if not exists public.properties (
   slug text not null unique,
   title text not null,
   operation text not null check (operation in ('venta', 'alquiler')),
-  type text not null check (type in ('casa', 'apartamento', 'terreno', 'local')),
+  type text not null check (type in ('casa', 'apartamento', 'terreno', 'local', 'oficina', 'bodega')),
   price numeric not null default 0,
   currency text not null default 'USD' check (currency in ('USD', 'HNL')),
   city text not null,
+  department text not null default '',
   neighborhood text not null default '',
   bedrooms int not null default 0,
   bathrooms numeric not null default 0,
@@ -245,6 +246,18 @@ begin
   end if;
 end $$;
 grant execute on function public.confirm_payment(uuid, boolean) to authenticated;
+
+-- ---------- Búsquedas guardadas ----------
+create table if not exists public.saved_searches (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null default 'Mi búsqueda',
+  query text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, query)
+);
+alter table public.saved_searches enable row level security;
+create policy "búsquedas propias" on public.saved_searches for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- ---------- Favoritos ----------
 create table if not exists public.favorites (

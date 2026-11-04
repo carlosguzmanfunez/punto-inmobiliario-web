@@ -8,7 +8,7 @@ type Row = Record<string, any>;
 
 const toProperty = (r: Row): Property => ({
   id: r.id, slug: r.slug, title: r.title, operation: r.operation, type: r.type,
-  price: Number(r.price), currency: r.currency, city: r.city, neighborhood: r.neighborhood,
+  price: Number(r.price), currency: r.currency, city: r.city, department: r.department || undefined, neighborhood: r.neighborhood,
   bedrooms: r.bedrooms, bathrooms: Number(r.bathrooms), areaM2: Number(r.area_m2),
   lotM2: r.lot_m2 == null ? undefined : Number(r.lot_m2), parking: r.parking,
   images: r.images ?? [], features: r.features ?? [], description: r.description,
@@ -113,7 +113,7 @@ export function createSupabaseBackend(url: string, key: string): Backend {
     async saveProperty(p) {
       const row = {
         slug: p.slug?.trim() ? slugify(p.slug) : slugify(p.title), title: p.title, operation: p.operation, type: p.type,
-        price: p.price, currency: p.currency, city: p.city, neighborhood: p.neighborhood, bedrooms: p.bedrooms,
+        price: p.price, currency: p.currency, city: p.city, department: p.department ?? "", neighborhood: p.neighborhood, bedrooms: p.bedrooms,
         bathrooms: p.bathrooms, area_m2: p.areaM2, lot_m2: p.lotM2 ?? null, parking: p.parking, images: p.images,
         features: p.features, description: p.description, is_new: !!p.isNew, featured: !!p.featured,
         published: p.published !== false, status: p.status ?? "publicada",
@@ -154,6 +154,23 @@ export function createSupabaseBackend(url: string, key: string): Backend {
       const { data, error } = await sb.from("sellers").select("*").order("created_at", { ascending: false }); fail(error);
       return (data ?? []).map(toSeller);
     },
+    async listVitrinas() {
+      const { data, error } = await sb.from("sellers").select("*").gte("vitrina_until", new Date().toISOString()).order("name"); fail(error);
+      return (data ?? []).map(toSeller);
+    },
+
+    async listSavedSearches() {
+      const id = await uid(); if (!id) throw new Error("Debes iniciar sesión.");
+      const { data, error } = await sb.from("saved_searches").select("*").eq("user_id", id).order("created_at", { ascending: false }); fail(error);
+      return (data ?? []).map((r) => ({ id: r.id, name: r.name, query: r.query, createdAt: r.created_at }));
+    },
+    async saveSearch({ name, query }) {
+      const id = await uid(); if (!id) throw new Error("Debes iniciar sesión.");
+      const { error } = await sb.from("saved_searches").insert({ user_id: id, name: name.trim() || "Mi búsqueda", query });
+      if (error?.code === "23505") throw new Error("Ya tienes guardada esta búsqueda.");
+      fail(error);
+    },
+    async deleteSavedSearch(sid) { const { error } = await sb.from("saved_searches").delete().eq("id", sid); fail(error); },
 
     async requestPayment({ kind, propertyId, reference }) {
       const id = await uid(); if (!id) throw new Error("Debes iniciar sesión.");

@@ -3,6 +3,7 @@ import Logo from "./Logo";
 import { mainNav, site, whatsappLink } from "@/lib/site";
 import { ChevronDown, CloseIcon, MenuIcon, WhatsAppIcon } from "./Icons";
 import AccountButton from "./AccountButton";
+import { CurrencySwitch } from "./Price";
 
 // Encabezado inspirado en la composición de Redfin: logo a la izquierda, menú horizontal
 // con submenús y acciones a la derecha. Funciona sin JavaScript (menú móvil con checkbox).
@@ -44,6 +45,7 @@ export default function Header() {
             ))}
           </ul>
           <div className="nav-mobile-cta">
+            <CurrencySwitch className="currency-switch--block" />
             <a className="btn btn--wa" href={whatsappLink()} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon size={20} /> Escríbenos por WhatsApp
             </a>
@@ -51,6 +53,8 @@ export default function Header() {
           </div>
         </nav>
         <div className="header-actions">
+          <CurrencySwitch variant="toggle" />
+          <Link className="btn btn--primary btn--sm header-publish" href="/vender">Publicar</Link>
           <a className="header-phone" aria-label="WhatsApp" href={whatsappLink()} target="_blank" rel="noopener noreferrer">
             <WhatsAppIcon size={18} /> <span>{site.whatsappDisplay}</span>
           </a>

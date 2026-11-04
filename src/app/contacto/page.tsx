@@ -1,5 +1,6 @@
 import { site, whatsappLink } from "@/lib/site";
 import { MailIcon, PinIcon, WhatsAppIcon } from "@/components/Icons";
+import InquiryForm from "@/components/InquiryForm";
 
 export const metadata = { title: "Contacto" };
 
@@ -27,6 +28,20 @@ export default function ContactPage() {
             <span className="service__icon"><PinIcon size={26} /></span>
             <h3>Oficina</h3><p>{site.address}</p><p className="muted small">Visitas con cita previa.</p>
           </div>
+        </div>
+      </section>
+      <section className="section section--tint">
+        <div className="container contact-grid">
+          <div>
+            <h2>Escríbenos</h2>
+            <p className="muted">Déjanos tu mensaje y te respondemos por WhatsApp o correo. Si buscas algo concreto, cuéntanos ciudad, presupuesto y tipo de propiedad.</p>
+            <ul className="checklist">
+              <li>Compra, venta y alquiler en toda Honduras</li>
+              <li>Atención a hondureños en el extranjero</li>
+              <li>Publicación para dueños, agentes y constructoras</li>
+            </ul>
+          </div>
+          <div className="panel"><InquiryForm propertyId={null} defaultMessage="Hola, quisiera información sobre…" /></div>
         </div>
       </section>
     </>

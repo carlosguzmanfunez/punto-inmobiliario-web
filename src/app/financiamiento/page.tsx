@@ -1,5 +1,6 @@
 import { whatsappLink } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/Icons";
+import MortgageCalc from "@/components/MortgageCalc";
 
 export const metadata = { title: "Financiamiento" };
 
@@ -25,6 +26,11 @@ export default function FinancingPage() {
         </div>
       </section>
       <section id="calculadora" className="section container">
+        <h2>Calcula tu cuota</h2>
+        <p className="muted">Mueve la prima, la tasa y el plazo para ver cuánto pagarías al mes.</p>
+        <MortgageCalc price={2500000} currency="HNL" />
+      </section>
+      <section className="section container">
         <h2>Cuotas de referencia</h2>
         <p className="muted">Ejemplo con prima del 10 % y tasa anual de {RATE * 100} %. Las tasas reales dependen de cada institución y tu perfil.</p>
         <div className="table-wrap">

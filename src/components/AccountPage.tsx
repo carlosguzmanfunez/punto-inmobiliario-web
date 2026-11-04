@@ -2,15 +2,16 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { Inquiry } from "@/lib/backend";
+import type { Inquiry, SavedSearch } from "@/lib/backend";
 import { formatDate, statusLabel } from "@/lib/labels";
 import { useAuth } from "./AuthProvider";
 import PropertyCard from "./PropertyCard";
 import { useProperties } from "./useProperties";
-import { HeartIcon, InboxIcon, KeyIcon, LogoutIcon, UserIcon } from "./Icons";
+import { BellIcon, HeartIcon, InboxIcon, KeyIcon, LogoutIcon, TrashIcon, UserIcon } from "./Icons";
+import { searchTitle } from "./PropertyBrowser";
 import { formatLempiras, plans } from "@/lib/site";
 
-type Tab = "favoritos" | "consultas" | "perfil" | "vender";
+type Tab = "favoritos" | "busquedas" | "consultas" | "perfil" | "vender";
 
 export default function AccountPage() {
   const { backend, profile, loading, favorites, refresh } = useAuth();
@@ -23,9 +24,10 @@ export default function AccountPage() {
   const [saved, setSaved] = useState("");
   const [business, setBusiness] = useState("");
   const [sellErr, setSellErr] = useState("");
+  const [searches, setSearches] = useState<SavedSearch[] | null>(null);
 
   useEffect(() => { if (!loading && !profile) router.replace("/ingresar?next=/cuenta"); }, [loading, profile, router]);
-  useEffect(() => { if (profile) { setF({ fullName: profile.fullName, phone: profile.phone }); backend.listMyInquiries().then(setInquiries); } }, [profile, backend]);
+  useEffect(() => { if (profile) { setF({ fullName: profile.fullName, phone: profile.phone }); backend.listMyInquiries().then(setInquiries); backend.listSavedSearches().then(setSearches).catch(() => setSearches([])); } }, [profile, backend]);
 
   if (!profile) return <section className="section container"><p className="muted">Cargando tu cuenta…</p></section>;
   const favs = (list ?? []).filter((p) => favorites.has(p.id));
@@ -43,6 +45,7 @@ export default function AccountPage() {
 
       <div className="tabs tabs--line" role="tablist">
         <button role="tab" aria-selected={tab === "favoritos"} className={tab === "favoritos" ? "is-active" : ""} onClick={() => setTab("favoritos")}><HeartIcon size={16} /> Favoritos <span className="count">{favorites.size}</span></button>
+        <button role="tab" aria-selected={tab === "busquedas"} className={tab === "busquedas" ? "is-active" : ""} onClick={() => setTab("busquedas")}><BellIcon size={16} /> Búsquedas <span className="count">{searches?.length ?? 0}</span></button>
         <button role="tab" aria-selected={tab === "consultas"} className={tab === "consultas" ? "is-active" : ""} onClick={() => setTab("consultas")}><InboxIcon size={16} /> Mis consultas <span className="count">{inquiries?.length ?? 0}</span></button>
         <button role="tab" aria-selected={tab === "perfil"} className={tab === "perfil" ? "is-active" : ""} onClick={() => setTab("perfil")}><UserIcon size={16} /> Mis datos</button>
         {profile.role === "user" && <button role="tab" aria-selected={tab === "vender"} className={tab === "vender" ? "is-active" : ""} onClick={() => setTab("vender")}><KeyIcon size={16} /> Quiero vender</button>}
@@ -52,6 +55,28 @@ export default function AccountPage() {
         <div className="grid-cards">{favs.map((p) => <PropertyCard key={p.id} p={p} />)}</div>
       ) : (
         <div className="empty"><p>Todavía no has guardado propiedades. Toca el corazón ♡ en cualquier propiedad para guardarla aquí.</p><Link className="btn btn--primary" href="/propiedades">Explorar propiedades</Link></div>
+      ))}
+
+      {tab === "busquedas" && (searches?.length ? (
+        <ul className="inquiry-list">
+          {searches.map((s) => {
+            const n = (list ?? []).length ? countMatches(list ?? [], s.query) : null;
+            return (
+              <li key={s.id} className="inquiry saved-search">
+                <div>
+                  <Link href={`/propiedades?${s.query}`} className="inquiry__prop">{s.name || searchTitle(new URLSearchParams(s.query))}</Link>
+                  <p className="muted small">Guardada el {formatDate(s.createdAt)}{n !== null ? ` · ${n} ${n === 1 ? "propiedad disponible" : "propiedades disponibles"} hoy` : ""}</p>
+                </div>
+                <div className="saved-search__actions">
+                  <Link className="btn btn--outline btn--sm" href={`/propiedades?${s.query}`}>Ver resultados</Link>
+                  <button className="icon-btn icon-btn--danger" aria-label="Borrar búsqueda" onClick={async () => { await backend.deleteSavedSearch(s.id); setSearches((x) => (x ?? []).filter((y) => y.id !== s.id)); }}><TrashIcon size={16} /></button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="empty"><p>Guarda una búsqueda desde el listado de propiedades con el botón “Guardar búsqueda” y vuelve a ella cuando quieras.</p><Link className="btn btn--primary" href="/propiedades">Buscar propiedades</Link></div>
       ))}
 
       {tab === "consultas" && (inquiries?.length ? (
@@ -96,4 +121,15 @@ export default function AccountPage() {
       )}
     </section>
   );
+}
+
+// Cuántas propiedades cumplen hoy una búsqueda guardada (filtros principales).
+function countMatches(list: import("@/data/properties").Property[], query: string) {
+  const q = new URLSearchParams(query);
+  return list.filter((p) =>
+    (!q.get("operacion") || p.operation === q.get("operacion")) &&
+    (!q.get("tipo") || p.type === q.get("tipo")) &&
+    (!q.get("ciudad") || p.city === q.get("ciudad")) &&
+    (!q.get("hab") || p.bedrooms >= Number(q.get("hab")))
+  ).length;
 }

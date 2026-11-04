@@ -1,6 +1,6 @@
 // Tipos de propiedad y datos de ejemplo. Las propiedades reales se administran desde /admin.
 export type Operation = "venta" | "alquiler";
-export type PropertyType = "casa" | "apartamento" | "terreno" | "local";
+export type PropertyType = "casa" | "apartamento" | "terreno" | "local" | "oficina" | "bodega";
 
 export type Property = {
   id: string;
@@ -11,6 +11,8 @@ export type Property = {
   price: number;
   currency: "USD" | "HNL";
   city: string;
+  // Departamento. Si falta se deduce de la ciudad (ver departmentOf).
+  department?: string;
   neighborhood: string;
   bedrooms: number;
   bathrooms: number;
@@ -134,14 +136,153 @@ const seed: Omit<Property, "id">[] = [
     features: ["Remodelada", "Patio", "Cerca de hospitales", "Seguridad"],
     description: "Casa amplia y fresca, recién remodelada, en zona céntrica y segura.",
   },
+  {
+    slug: "apartamento-amueblado-los-proceres",
+    title: "Apartamento amueblado de una habitación en Los Próceres",
+    operation: "alquiler", type: "apartamento", price: 750, currency: "USD",
+    city: "Tegucigalpa", neighborhood: "Los Próceres",
+    bedrooms: 1, bathrooms: 1, areaM2: 62, parking: 1,
+    images: ["/img/apto-2.svg", "/img/apto-1.svg"],
+    features: ["Amueblado", "Seguridad 24/7", "Planta eléctrica", "Ascensor", "Aire acondicionado"],
+    description: "Ideal para profesionales o estudiantes de posgrado. A pocos minutos de centros comerciales, bancos y restaurantes. Incluye agua y mantenimiento.",
+    isNew: true,
+  },
+  {
+    slug: "oficina-corporativa-lomas-del-mayab",
+    title: "Oficina corporativa con vista panorámica en Lomas del Mayab",
+    operation: "alquiler", type: "oficina", price: 1800, currency: "USD",
+    city: "Tegucigalpa", neighborhood: "Lomas del Mayab",
+    bedrooms: 0, bathrooms: 2, areaM2: 140, parking: 4,
+    images: ["/img/oficina-1.svg", "/img/apto-1.svg"],
+    features: ["Vista panorámica", "Planta eléctrica", "Ascensor", "Aire acondicionado", "Parqueo de visitas", "Seguridad 24/7"],
+    description: "Oficina en torre corporativa con recepción compartida, sala de reuniones y planta eléctrica al 100 %. Lista para instalarse.",
+    featured: true,
+  },
+  {
+    slug: "bodega-industrial-choloma",
+    title: "Bodega industrial sobre carretera a Puerto Cortés",
+    operation: "alquiler", type: "bodega", price: 85000, currency: "HNL",
+    city: "Choloma", neighborhood: "Carretera a Puerto Cortés",
+    bedrooms: 0, bathrooms: 2, areaM2: 850, lotM2: 1400, parking: 6,
+    images: ["/img/bodega-1.svg"],
+    features: ["Acceso a carretera", "Andén de carga", "Seguridad 24/7", "Energía trifásica"],
+    description: "Bodega con altura de 9 metros, andén para dos contenedores y oficina administrativa. A 25 minutos del puerto.",
+  },
+  {
+    slug: "casa-de-campo-valle-de-angeles",
+    title: "Casa de campo con bosque de pinos en Valle de Ángeles",
+    operation: "venta", type: "casa", price: 185000, currency: "USD",
+    city: "Valle de Ángeles", neighborhood: "Aldea San Francisco",
+    bedrooms: 3, bathrooms: 2, areaM2: 190, lotM2: 1500, parking: 3,
+    images: ["/img/casa-campo-1.svg", "/img/casa-1.svg"],
+    features: ["Jardín", "Chimenea", "Vista panorámica", "Cisterna", "Escritura pública"],
+    description: "Casa de madera y piedra rodeada de pinos, a 30 minutos de Tegucigalpa. Perfecta para fines de semana o para vivir con clima fresco todo el año.",
+    featured: true,
+  },
+  {
+    slug: "casa-colonia-el-toronjal-la-ceiba",
+    title: "Casa de una planta en Colonia El Toronjal",
+    operation: "venta", type: "casa", price: 3950000, currency: "HNL",
+    city: "La Ceiba", neighborhood: "Colonia El Toronjal",
+    bedrooms: 3, bathrooms: 2, areaM2: 165, lotM2: 300, parking: 2,
+    images: ["/img/casa-4.svg", "/img/casa-3.svg"],
+    features: ["Patio", "Aire acondicionado", "Calentador de agua", "Residencial cerrado"],
+    description: "Casa fresca y bien iluminada, a cinco minutos de la playa y del centro de La Ceiba. Acepta financiamiento bancario.",
+  },
+  {
+    slug: "apartamento-frente-al-mar-west-end",
+    title: "Apartamento frente al mar en West End",
+    operation: "alquiler", type: "apartamento", price: 1600, currency: "USD",
+    city: "Roatán", neighborhood: "West End",
+    bedrooms: 2, bathrooms: 2, areaM2: 95, parking: 1,
+    images: ["/img/playa-1.svg", "/img/apto-2.svg"],
+    features: ["Frente al mar", "Amueblado", "Piscina", "Aire acondicionado", "Terraza"],
+    description: "Alquiler por meses en edificio con piscina y salida directa a la playa. Ideal para trabajo remoto o temporada larga en la isla.",
+    isNew: true,
+  },
+  {
+    slug: "terreno-salida-a-tegucigalpa-comayagua",
+    title: "Terreno plano sobre la salida a Tegucigalpa",
+    operation: "venta", type: "terreno", price: 1250000, currency: "HNL",
+    city: "Comayagua", neighborhood: "Salida a Tegucigalpa",
+    bedrooms: 0, bathrooms: 0, areaM2: 0, lotM2: 1200, parking: 0,
+    images: ["/img/terreno-1.svg"],
+    features: ["Agua potable", "Energía eléctrica", "Escritura pública", "Acceso a carretera"],
+    description: "Terreno de 1,200 m² con frente a calle pavimentada, ideal para vivienda, bodega o pequeño comercio. Cerca del aeropuerto Palmerola.",
+  },
+  {
+    slug: "casa-familiar-siguatepeque",
+    title: "Casa familiar con jardín en Siguatepeque",
+    operation: "venta", type: "casa", price: 2800000, currency: "HNL",
+    city: "Siguatepeque", neighborhood: "Barrio San Antonio",
+    bedrooms: 4, bathrooms: 3, areaM2: 230, lotM2: 420, parking: 2,
+    images: ["/img/casa-5.svg", "/img/casa-2.svg"],
+    features: ["Jardín", "Cisterna", "Cuarto de servicio", "Patio"],
+    description: "Amplia casa en el centro del país con clima agradable, a pasos de escuelas y del parque central.",
+  },
+  {
+    slug: "local-bulevar-del-norte-sps",
+    title: "Local en plaza comercial sobre Bulevar del Norte",
+    operation: "alquiler", type: "local", price: 45000, currency: "HNL",
+    city: "San Pedro Sula", neighborhood: "Bulevar del Norte",
+    bedrooms: 0, bathrooms: 1, areaM2: 120, parking: 8,
+    images: ["/img/local-1.svg"],
+    features: ["Alto tráfico", "Vitrina", "Parqueo de visitas", "Aire acondicionado"],
+    description: "Local esquinero en plaza con supermercado ancla. Excelente para farmacia, restaurante o banco.",
+  },
+  {
+    slug: "apartamento-altos-de-miramontes",
+    title: "Apartamento con terraza en Altos de Miramontes",
+    operation: "venta", type: "apartamento", price: 128000, currency: "USD",
+    city: "Tegucigalpa", neighborhood: "Altos de Miramontes",
+    bedrooms: 3, bathrooms: 2, areaM2: 118, parking: 2,
+    images: ["/img/apto-1.svg", "/img/apto-2.svg"],
+    features: ["Terraza", "Gimnasio", "Área social", "Seguridad 24/7", "Mascotas permitidas"],
+    description: "Apartamento esquinero con terraza privada, en edificio con gimnasio y área social. Cerca de colegios bilingües.",
+  },
+  {
+    slug: "casa-colonia-las-colinas-choluteca",
+    title: "Casa con piscina en Choluteca",
+    operation: "venta", type: "casa", price: 2350000, currency: "HNL",
+    city: "Choluteca", neighborhood: "Colonia Las Colinas",
+    bedrooms: 3, bathrooms: 2, areaM2: 175, lotM2: 350, parking: 2,
+    images: ["/img/casa-3.svg", "/img/casa-1.svg"],
+    features: ["Piscina", "Aire acondicionado", "Patio", "Cisterna"],
+    description: "Casa fresca con piscina para el calor del sur, en colonia tranquila cerca del centro de Choluteca.",
+  },
+  {
+    slug: "oficina-en-venta-colonia-trejo",
+    title: "Oficina en edificio médico y corporativo, Colonia Trejo",
+    operation: "venta", type: "oficina", price: 95000, currency: "USD",
+    city: "San Pedro Sula", neighborhood: "Colonia Trejo",
+    bedrooms: 0, bathrooms: 1, areaM2: 65, parking: 2,
+    images: ["/img/oficina-1.svg"],
+    features: ["Ascensor", "Planta eléctrica", "Aire acondicionado", "Parqueo de visitas"],
+    description: "Oficina lista para consultorio o despacho profesional, en edificio con recepción y seguridad.",
+  },
 ];
 
 export const properties: Property[] = seed.map((p, i) => ({
-  ...p, id: p.slug, published: true, views: [184, 132, 97, 61, 75, 210, 28, 44][i] ?? 0,
-  createdAt: new Date(Date.UTC(2026, 9, 1 + i * 3)).toISOString(),
+  ...p, id: p.slug, published: true, views: [184, 132, 97, 61, 75, 210, 28, 44, 58, 91, 33, 120, 47, 88, 22, 31, 40, 66, 29, 25][i] ?? 0,
+  createdAt: new Date(Date.UTC(2026, 9, 1 + i)).toISOString(),
 }));
 
-export const cities = ["Tegucigalpa", "San Pedro Sula", "Roatán", "La Ceiba"] as const;
+export const cities = ["Tegucigalpa", "San Pedro Sula", "Roatán", "La Ceiba", "Comayagua", "Valle de Ángeles", "Choloma", "Siguatepeque", "Choluteca"] as const;
+
+// Amenidades que se pueden filtrar en el buscador y marcar en el editor.
+export const amenities = [
+  "Amueblado", "Piscina", "Gimnasio", "Seguridad 24/7", "Planta eléctrica", "Cisterna", "Jardín", "Terraza", "Balcón",
+  "Ascensor", "Área social", "Aire acondicionado", "Mascotas permitidas", "Residencial cerrado", "Vista panorámica",
+  "Frente al mar", "Parqueo de visitas", "Cuarto de servicio", "Patio", "Calentador de agua", "Escritura pública",
+  "Agua potable", "Energía eléctrica", "Acceso a carretera",
+];
+
+// Código corto y estable para citar una propiedad por teléfono o WhatsApp (ej. PI-4K7Q2).
+export function propertyCode(p: Pick<Property, "id">) {
+  let h = 2166136261;
+  for (const c of p.id) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return "PI-" + (h >>> 0).toString(36).toUpperCase().padStart(6, "0").slice(-5);
+}
 
 export function formatPrice(p: Pick<Property, "price" | "currency" | "operation">) {
   const n = new Intl.NumberFormat("es-HN", { maximumFractionDigits: 0 }).format(p.price);
@@ -150,7 +291,11 @@ export function formatPrice(p: Pick<Property, "price" | "currency" | "operation"
 }
 
 export const typeLabel: Record<PropertyType, string> = {
-  casa: "Casa", apartamento: "Apartamento", terreno: "Terreno", local: "Local comercial",
+  casa: "Casa", apartamento: "Apartamento", terreno: "Terreno", local: "Local comercial", oficina: "Oficina", bodega: "Bodega",
+};
+
+export const typePlural: Record<PropertyType, string> = {
+  casa: "Casas", apartamento: "Apartamentos", terreno: "Terrenos", local: "Locales", oficina: "Oficinas", bodega: "Bodegas",
 };
 
 export const operationLabel: Record<Operation, string> = { venta: "En venta", alquiler: "En alquiler" };

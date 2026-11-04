@@ -1,6 +1,6 @@
 import { isLive, properties as seedProperties, slugify, type ListingStatus, type Property } from "@/data/properties";
 import { plans } from "@/lib/site";
-import type { Backend, Inquiry, Payment, Profile, Seller } from "./types";
+import { vitrinaActive, type Backend, type Inquiry, type Payment, type Profile, type SavedSearch, type Seller } from "./types";
 
 // Modo demo: todo se guarda en localStorage del navegador. Sirve para probar el sitio
 // sin base de datos. Cuentas de prueba: admin@demo.hn / admin123 (administrador),
@@ -9,9 +9,10 @@ type DemoUser = Profile & { password: string };
 type DB = {
   users: DemoUser[]; sellers: Seller[]; properties: Property[]; payments: Payment[];
   favorites: { userId: string; propertyId: string }[]; inquiries: Inquiry[]; session: string | null;
+  searches: (SavedSearch & { userId: string })[];
 };
 
-const KEY = "pihn-demo-v2";
+const KEY = "pihn-demo-v3";
 export const DEMO_ADMIN = { email: "admin@demo.hn", password: "admin123" };
 export const DEMO_SELLER = { email: "ventas@morazan.hn", password: "vende123" };
 export const DEMO_BUYER = { email: "maria@ejemplo.com", password: "maria123" };
@@ -63,6 +64,9 @@ function seed(): DB {
       { id: uid(), propertyId: p[2].id, userId: null, name: "Ana Reyes", email: "ana.reyes@ejemplo.com", phone: "+504 3311-2244", message: "¿Aceptan financiamiento con BAC? Quisiera visitarla.", status: "cerrada", createdAt: "2026-10-28T09:45:00.000Z" },
       { id: uid(), propertyId: p[4].id, userId: null, name: "Luis Paredes", email: "luis.p@ejemplo.com", phone: "+504 9512-3344", message: "¿El apartamento tiene vista al Merendón desde la sala? Me interesa para inversión.", status: "nueva", createdAt: "2026-11-03T11:05:00.000Z" },
     ],
+    searches: [
+      { id: uid(), userId: maria.id, name: "Casas en venta en Tegucigalpa", query: "operacion=venta&tipo=casa&ciudad=Tegucigalpa", createdAt: "2026-11-01T10:00:00.000Z" },
+    ],
     session: null,
   };
 }
@@ -71,7 +75,7 @@ function load(): DB {
   if (typeof window === "undefined") return seed();
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) { const db = JSON.parse(raw); db.searches ??= []; return db; }
   } catch {}
   const db = seed();
   save(db);
@@ -246,6 +250,22 @@ export function createDemoBackend(): Backend {
       save(db); return delay({ ...s });
     },
     async listSellers() { const db = load(); requireAdmin(db); return delay([...db.sellers].sort((a, b) => b.createdAt.localeCompare(a.createdAt))); },
+    async listVitrinas() { return delay(load().sellers.filter((s) => vitrinaActive(s))); },
+
+    async listSavedSearches() {
+      const db = load(); const u = requireUser(db);
+      return delay(db.searches.filter((x) => x.userId === u.id).map(({ userId: _u, ...x }) => x).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+    },
+    async saveSearch({ name, query }) {
+      const db = load(); const u = requireUser(db);
+      if (db.searches.some((x) => x.userId === u.id && x.query === query)) throw new Error("Ya tienes guardada esta búsqueda.");
+      db.searches.push({ id: uid(), userId: u.id, name: name.trim() || "Mi búsqueda", query, createdAt: now() });
+      save(db); await delay(null);
+    },
+    async deleteSavedSearch(id) {
+      const db = load(); const u = requireUser(db);
+      db.searches = db.searches.filter((x) => !(x.id === id && x.userId === u.id)); save(db);
+    },
 
     async requestPayment({ kind, propertyId, reference }) {
       const db = load(); const u = requireSeller(db);
