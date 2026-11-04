@@ -4,8 +4,8 @@ import { photos } from "@/data/photos";
 import { vitrinaActive, type Backend, type Inquiry, type Payment, type Profile, type SavedSearch, type Seller, type Settings } from "./types";
 
 // Modo demo: todo se guarda en localStorage del navegador. Sirve para probar el sitio
-// sin base de datos. Cuentas de prueba: admin@demo.hn / admin123 (administrador),
-// ventas@morazan.hn / vende123 (vendedor) y maria@ejemplo.com / maria123 (compradora).
+// sin base de datos. Cuentas de prueba (clave 123456789@): puntoinmobiliariohn@gmail.com y
+// admin@demo.hn (administradores), ventas@morazan.hn (vendedor) y maria@ejemplo.com (compradora).
 type DemoUser = Profile & { password: string };
 type DB = {
   users: DemoUser[]; sellers: Seller[]; properties: Property[]; payments: Payment[];
@@ -14,10 +14,13 @@ type DB = {
   settings?: Settings;
 };
 
-const KEY = "pihn-demo-v5";
-export const DEMO_ADMIN = { email: "admin@demo.hn", password: "admin123" };
-export const DEMO_SELLER = { email: "ventas@morazan.hn", password: "vende123" };
-export const DEMO_BUYER = { email: "maria@ejemplo.com", password: "maria123" };
+const KEY = "pihn-demo-v6";
+// Todas las cuentas de prueba usan la misma clave, como pidió el dueño del sitio.
+export const DEMO_PASSWORD = "123456789@";
+export const DEMO_OWNER = { email: "puntoinmobiliariohn@gmail.com", password: DEMO_PASSWORD };
+export const DEMO_ADMIN = { email: "admin@demo.hn", password: DEMO_PASSWORD };
+export const DEMO_SELLER = { email: "ventas@morazan.hn", password: DEMO_PASSWORD };
+export const DEMO_BUYER = { email: "maria@ejemplo.com", password: DEMO_PASSWORD };
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 const now = () => new Date().toISOString();
@@ -29,6 +32,7 @@ const plusDays = (from: string | null | undefined, days: number) => {
 
 function seed(): DB {
   const admin: DemoUser = { id: "u-admin", email: DEMO_ADMIN.email, password: DEMO_ADMIN.password, fullName: "Administrador", phone: "+504 8909-2285", role: "admin", createdAt: "2026-10-01T12:00:00.000Z" };
+  const owner: DemoUser = { id: "u-owner", email: DEMO_OWNER.email, password: DEMO_OWNER.password, fullName: "Carlos Guzmán", phone: "+504 8909-2285", role: "admin", createdAt: "2026-09-26T12:00:00.000Z" };
   const maria: DemoUser = { id: "u-maria", email: DEMO_BUYER.email, password: DEMO_BUYER.password, fullName: "María López", phone: "+1 305 555 0182", role: "user", createdAt: "2026-10-20T15:30:00.000Z" };
   const seller: DemoUser = { id: "u-morazan", email: DEMO_SELLER.email, password: DEMO_SELLER.password, fullName: "Ricardo Fiallos", phone: "+504 9876-5432", role: "seller", createdAt: "2026-10-12T10:00:00.000Z" };
   const morazan: Seller = {
@@ -60,7 +64,7 @@ function seed(): DB {
   // Historia de ejemplo de 90 días para que el panel muestre métricas realistas.
   const h = history(p, [seller, ...extraSellerUsers], maria);
   return {
-    users: [admin, maria, seller, ...extraSellerUsers, ...h.buyers],
+    users: [owner, admin, maria, seller, ...extraSellerUsers, ...h.buyers],
     sellers: [morazan, ...extraSellers],
     properties: p,
     payments: [
@@ -88,9 +92,9 @@ function seed(): DB {
 
 // ---------- Datos de ejemplo para el panel (nombres y contactos ficticios) ----------
 const extraSellerUsers: DemoUser[] = [
-  { id: "u-caribe", email: "info@caribeinmuebles.hn", password: "demo1234", fullName: "Gabriela Ramos", phone: "+504 9455-1020", role: "seller", createdAt: new Date(Date.now() - 64 * DAY).toISOString() },
-  { id: "u-lempira", email: "ventas@lempirabienes.hn", password: "demo1234", fullName: "Óscar Zelaya", phone: "+504 9733-8812", role: "seller", createdAt: new Date(Date.now() - 41 * DAY).toISOString() },
-  { id: "u-karla", email: "karla.mejia@ejemplo.com", password: "demo1234", fullName: "Karla Mejía", phone: "+504 3190-4471", role: "seller", createdAt: new Date(Date.now() - 17 * DAY).toISOString() },
+  { id: "u-caribe", email: "info@caribeinmuebles.hn", password: DEMO_PASSWORD, fullName: "Gabriela Ramos", phone: "+504 9455-1020", role: "seller", createdAt: new Date(Date.now() - 64 * DAY).toISOString() },
+  { id: "u-lempira", email: "ventas@lempirabienes.hn", password: DEMO_PASSWORD, fullName: "Óscar Zelaya", phone: "+504 9733-8812", role: "seller", createdAt: new Date(Date.now() - 41 * DAY).toISOString() },
+  { id: "u-karla", email: "karla.mejia@ejemplo.com", password: DEMO_PASSWORD, fullName: "Karla Mejía", phone: "+504 3190-4471", role: "seller", createdAt: new Date(Date.now() - 17 * DAY).toISOString() },
 ];
 const extraSellers: Seller[] = [
   { id: "u-caribe", slug: "caribe-inmuebles", name: "Caribe Inmuebles", city: "La Ceiba", whatsapp: "+504 9455-1020", logo: "", bio: "Casas y apartamentos en La Ceiba, Roatán y Utila. Especialistas en compradores que viven fuera de Honduras.", vitrinaUntil: new Date(Date.now() + 4 * DAY).toISOString(), createdAt: extraSellerUsers[0].createdAt },
@@ -114,7 +118,7 @@ function history(p: Property[], sellerUsers: DemoUser[], maria: DemoUser) {
     const fn = pick(first), ln = pick(last);
     // Más registros en las últimas semanas: el sitio va creciendo.
     const d = Math.floor(Math.pow(r(), 1.6) * 88) + 1;
-    buyers.push({ id: `u-b${k}`, email: `${fn}.${ln}${k}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + "@ejemplo.com", password: "demo1234", fullName: `${fn} ${ln}`, phone: phone(), role: "user", createdAt: ago(d) });
+    buyers.push({ id: `u-b${k}`, email: `${fn}.${ln}${k}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "") + "@ejemplo.com", password: DEMO_PASSWORD, fullName: `${fn} ${ln}`, phone: phone(), role: "user", createdAt: ago(d) });
   }
   const live = p.filter((x) => x.published !== false);
   const msgs = [
@@ -266,6 +270,9 @@ export function createDemoBackend(): Backend {
       const u = db.users.find((x) => x.email === email.trim().toLowerCase() && x.password === password);
       if (!u) throw new Error("Correo o contraseña incorrectos.");
       db.session = u.id; save(db); emit(); await delay(null);
+    },
+    async signInWithGoogle() {
+      throw new Error("El ingreso con Google se activa cuando el sitio se conecte a la base de datos. Mientras tanto entra con tu correo y contraseña.");
     },
     async signOut() { const db = load(); db.session = null; save(db); emit(); },
     async resetPassword() { await delay(null); },

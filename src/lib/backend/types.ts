@@ -90,6 +90,8 @@ export interface Backend {
   onAuthChange(cb: () => void): () => void;
   signUp(d: SignUpInput): Promise<{ needsConfirmation: boolean }>;
   signIn(email: string, password: string): Promise<void>;
+  // Abre la pantalla de Google y vuelve al sitio en `next` (por defecto /cuenta).
+  signInWithGoogle(next?: string): Promise<void>;
   signOut(): Promise<void>;
   resetPassword(email: string): Promise<void>;
   updateProfile(d: { fullName: string; phone: string }): Promise<void>;

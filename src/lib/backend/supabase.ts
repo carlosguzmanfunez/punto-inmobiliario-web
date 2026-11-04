@@ -79,6 +79,10 @@ export function createSupabaseBackend(url: string, key: string): Backend {
       fail(error); return { needsConfirmation: !data.session };
     },
     async signIn(email, password) { const { error } = await sb.auth.signInWithPassword({ email, password }); fail(error); },
+    async signInWithGoogle(next = "/cuenta") {
+      const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}${next}` } });
+      fail(error);
+    },
     async signOut() { await sb.auth.signOut(); },
     async resetPassword(email) {
       const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/cuenta` }); fail(error);

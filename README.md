@@ -11,7 +11,7 @@ node preview/build.mjs <carpeta>   # vista previa de una sola página (modo demo
 ```
 
 ## Modos de datos
-- **Demo** (sin configurar nada): todo se guarda en el navegador. Cuentas: administrador `admin@demo.hn` / `admin123`; vendedor `ventas@morazan.hn` / `vende123`; comprador `maria@ejemplo.com` / `maria123`.
+- **Demo** (sin configurar nada): todo se guarda en el navegador. Todas las cuentas de prueba usan la contraseña `123456789@`: dueño `puntoinmobiliariohn@gmail.com` (administrador), administrador `admin@demo.hn`, vendedor `ventas@morazan.hn`, comprador `maria@ejemplo.com`. Un administrador ve el menú **Entrar como** (arriba a la derecha) para pasar entre `/admin`, `/panel` y `/cuenta`.
 - **Supabase** (producción): crea `.env.local` con
   ```
   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
@@ -21,6 +21,9 @@ node preview/build.mjs <carpeta>   # vista previa de una sola página (modo demo
   y aplica `supabase/schema.sql` en el SQL Editor. Para volverte administrador:
   `insert into admin_emails values ('tu@correo.com');` antes de registrarte, o
   `update profiles set role = 'admin' where email = 'tu@correo.com';` después.
+- **Ingreso con Google**: en Supabase, Authentication → Providers → Google, pega el Client ID y Secret de Google Cloud
+  y agrega `https://<tu-proyecto>.supabase.co/auth/v1/callback` como URI de redirección en Google. En Authentication → URL
+  Configuration agrega la URL del sitio (y `http://localhost:3000` para pruebas).
 
 ## Tipos de usuario
 - **Comprador** (`user`): busca, guarda favoritos y envía consultas.

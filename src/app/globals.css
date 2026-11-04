@@ -1067,3 +1067,20 @@ a.kpi:hover { border-color: #c9d6ea; box-shadow: 0 8px 24px rgba(15,30,60,.08); 
 }
 /* Celular y tableta: los 4 campos en dos filas parejas, sin huecos */
 @media (max-width: 900px) { .hero-box__field--wide { grid-column: auto; } }
+
+/* Botón de Google */
+.btn--google { background: #fff; color: var(--ink); border-color: var(--line); font-weight: 700; }
+.btn--google:hover { background: var(--tint); border-color: #cfd6e2; }
+
+/* Menú del administrador para entrar como administrador, vendedor o comprador */
+.account-switch { position: relative; }
+.account-switch > .btn span { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-switch__menu { position: absolute; right: 0; top: calc(100% + 8px); width: 300px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 20px 50px -18px rgba(8,20,40,.35); padding: 8px; z-index: 70; }
+.account-switch__title { margin: 4px 8px 6px; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.account-switch__menu a { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 10px; }
+.account-switch__menu a:hover { background: var(--tint); }
+.account-switch__menu a.is-active { background: #eaf2fd; }
+.account-switch__menu strong { display: block; font-size: .92rem; }
+.account-switch__menu small { display: block; color: var(--ink-2); font-size: .78rem; line-height: 1.3; }
+.account-switch__icon { width: 34px; height: 34px; border-radius: 10px; background: var(--tint); color: var(--brand); display: grid; place-items: center; flex-shrink: 0; }
+@media (max-width: 640px) { .account-switch > .btn span, .account-switch > .btn svg:last-child { display: none; } .account-switch__menu { position: fixed; left: 12px; right: 12px; top: 64px; width: auto; } }
